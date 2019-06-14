@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.urbancode.com/PluginXMLSchema_v1">
 	<header>
-		<identifier version="2" name="SFTPSyncDirectory" id="com.urbancode.air.plugin.WinSCP"/>
+		<identifier version="3" name="SFTPSyncDirectory" id="com.urbancode.air.plugin.WinSCP"/>
 		<description>SFTP Sync Directory plugin</description>
 		<tag>WinSCP</tag>
 	</header>

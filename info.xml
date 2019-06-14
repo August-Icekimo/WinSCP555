@@ -7,9 +7,9 @@
 </author>
 <integration type='Deploy' />
 <tool-description>WinSCP plugin  [客製化WinSCP]</tool-description>
-<release-version>2.2</release-version>
+<release-version>3.0</release-version>
 <release-notes>
-<release-note plugin-version='2'>
-Initial release</release-note>
+<release-note plugin-version='3'>
+Final release</release-note>
 </release-notes>
 </plugininfo>
