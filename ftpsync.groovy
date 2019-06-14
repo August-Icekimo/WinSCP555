@@ -100,7 +100,12 @@ catch [Exception]\r\n
 scriptBody << """\
 finally\r\n
 {\r\n
-    if (\$synchronizationResult.Failures.Count -gt 0 ){Write-Host "Warning: Only \$Global:succeedTransferdFiles of \$Global:LocalFilesCount has been Uploaded."};\r\n
+    if (\$Global:succeedTransferdFiles -eq 0)\r\n 
+	{\r\n
+		Write-Host "Version Files which imported was empty. Nothing is deployed."\r\n
+		exit 1;\r\n
+	}\r\n
+	if (\$synchronizationResult.Failures.Count -gt 0 ){Write-Host "Warning: Only \$Global:succeedTransferdFiles of \$Global:LocalFilesCount has been Uploaded."};\r\n
     if (\$session.Opened -eq \$true) {Write-Host  "Successful uploaded:"}\r\n
     \$synchronizationResult.Transfers | Where-Object {\$_.Error -eq \$null }|ForEach-Object {Write-Host \$_.Destination -foregroundcolor Green}\r\n
     if (\$synchronizationResult.Failures.Count -gt 0 )\r\n
