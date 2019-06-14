@@ -18,100 +18,96 @@ println "Install WinSCP .NET assembly (With Portable EXE) to C:\\Windows\\System
 def scriptBody = []
 
 scriptBody << """\
-    # Remark \$d as Powershell Script Debug Mode ;\r\n\
-    # \$d = \$True ;\r\n\
-    \$global:succeedTransferdFiles = 0;\r\n\
-if (\$d) {Write-Host "--Star PowerShell With WinSCP .NET assembly"};\r\n\
-Add-Type -Path "C:\\Windows\\System32\\WinSCPnet.dll";\r\n\
-if (\$d) {Write-Host "--WinSCP .NET Imported Successfully"}else{Write-Host "Synchronization..."};\r\n\
-function FileTransferred\r\n\
-{\r\n\
-    Param(\$e, \$succeedTransferdFiles)\r\n\
- \r\n\
-    if (\$e.Error -eq \$Null)\r\n\
-    {\r\n\
-        Write-Host ("Upload of {0} succeeded" -f \$e.FileName);\r\n\
-		\$global:succeedTransferdFiles++ ;#added;\r\n\
-    }\r\n\
-    else\r\n\
-    {\r\n\
-        Write-Host ("Upload of {0} failed: {1}" -f \$e.FileName, \$e.Error);\r\n\
-    }\r\n\
- \r\n\
-    if (\$e.Chmod -ne \$Null)\r\n\
-    {\r\n\
-        if (\$e.Chmod.Error -eq \$Null)\r\n\
-        {\r\n\
-            if (\$d) {Write-Host ("-->Permisions of {0} set to {1}" -f \$e.Chmod.FileName, \$e.Chmod.FilePermissions)};\r\n\
-        }\r\n\
-        else\r\n\
-        {\r\n\
-            Write-Host ("-->Setting permissions of {0} failed: {1}" -f \$e.Chmod.FileName, \$e.Chmod.Error);\r\n\
-        }\r\n\
- \r\n\
-    }\r\n\
-    else\r\n\
-    {\r\n\
-        if (\$d) {Write-Host ("-->Permissions of {0} kept with their defaults" -f \$e.Destination)};\r\n\
-    }\r\n\
- \r\n\
-    if (\$e.Touch -ne \$Null)\r\n\
-    {\r\n\
-        if (\$e.Touch.Error -eq \$Null)\r\n\
-        {\r\n\
-            if (\$d) {Write-Host ("-->Timestamp of {0} set to {1}" -f \$e.Touch.FileName, \$e.Touch.LastWriteTime)};\r\n\
-        }\r\n\
-        else\r\n\
-        {\r\n\
-            Write-Host ("-->Setting timestamp of {0} failed: {1}" -f \$e.Touch.FileName, \$e.Touch.Error);\r\n\
-        }\r\n\
- \r\n\
-    }\r\n\
-    else\r\n\
-    {\r\n\
-        # This should never happen with Session.SynchronizeDirectories\r\n\
-        if (\$d) {Write-Host ("-->Timestamp of {0} kept with its default (current time)" -f \$e.Destination)};\r\n\
-    }\r\n\
-}\r\n\
+    # \$PSdebug = \$True ;\r\n
+    \$global:succeedTransferdFiles = 1;\r\n
+if (\$PSdebug) {Write-Host "--DeBug Mode is On"};\r\n
+Add-Type -Path "C:\\Windows\\System32\\WinSCPnet.dll";\r\n
+if (\$PSdebug) {Write-Host "--WinSCP .NET Imported Successfully"}\r\n
+else{\r\n
+    \$Total = Get-ChildItem -Path "${props['LDirectory']}" -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { \$_.PSIsContainer -eq \$false } |  Measure-Object | Select-Object -ExpandProperty Count;\r\n
+Write-Host "\$Total Files Counted, Now Upload Files(SFTP)....";\r\n
+}\r\n
+function FileTransferred \r\n
+{\r\n
+    Param(\$e, \$succeedTransferdFiles)\r\n
+    # Show synchronizationResult.transfer\r\n
+    if (\$e.Error -eq \$Null)\r\n
+    {\r\n
+        Write-Host ("\$global:succeedTransferdFiles`t{0} Upload Succeeded.`r`n" -f \$e.Destination);\r\n
+    }\r\n
+    else\r\n
+    {\r\n
+        Write-Host ("Upload Failed:`t`r`n {0} `r`n {1}" -f \$e.Filename, \$e.Error);\r\n
+        \$global:succeedTransferdFiles--;\r\n
+    }\r\n
+    if (\$e.Chmod -ne \$Null)\r\n
+    {\r\n
+        if (\$e.Chmod.Error -eq \$Null)\r\n
+        {\r\n
+            if (\$PSdebug) {Write-Host ("`t-->Permisions set to {0}" -f \$e.Chmod.FilePermissions)}};\r\n
+        else\r\n
+        {\r\n
+            Write-Host ("`t-->Setting permissions failed:`r`n {0}" -f  \$e.Chmod.Error);\r\n
+        }\r\n
+    }\r\n
+    else\r\n
+    {\r\n
+         if (\$PSdebug) {Write-Host ("`t-->Permissions kept with site defaults")};\r\n
+    }\r\n
+    if (\$e.Touch -ne \$Null)\r\n
+    {\r\n
+        if (\$e.Touch.Error -eq \$Null)\r\n
+        {\r\n
+            if (\$PSdebug) {Write-Host ("`t-->Timestamp set to {0}" -f \$e.Touch.LastWriteTime)};\r\n
+        }\r\n
+        else\r\n
+        {\r\n
+            Write-Host ("`t-->Setting timestamp failed:`r`n {0}" -f \$e.Touch.Error);\r\n
+        }\r\n
+    }\r\n
+    else\r\n
+    {\r\n
+        # This should never happen with Session.SynchronizeDirectories\r\n
+        if (\$PSdebug) {Write-Host ("`t-->Timestamp kept with its default (current time)")};\r\n
+    }\r\n
+            \$global:succeedTransferdFiles++ ;\r\n
+}\r\n
 """
 scriptBody << """\
-# Main script\r\n\
- \r\n\
-try\r\n\
-{\r\n\
-    \$sessionOptions = New-Object WinSCP.SessionOptions;\r\n\
-    \$sessionOptions.Protocol = [WinSCP.Protocol]::Sftp;\r\n\
-    \$sessionOptions.UserName = "${props['Username']}";\r\n\
-    \$sessionOptions.Password = "${props['Password']}";\r\n\
-    \$sessionOptions.HostName = "${props['HostName']}";\r\n\
-    \$sessionOptions.PortNumber = 22;\r\n\
-	\$sessionOptions.GiveUpSecurityAndAcceptAnySshHostKey = "\$True";
-    \$session = New-Object WinSCP.Session;\r\n\
-    try\r\n\
-    {\r\n\
-        # Will continuously report progress of synchronization;\r\n\
-        \$session.add_FileTransferred( { FileTransferred(\$_) } );\r\n\
-        \$session.Open(\$sessionOptions);\r\n\
-        \$synchronizationResult = \$session.PutFiles(\r\n\
-            "\\\\?\\${props['LDirectory']}", "${props['RDirectory']}", ${props['RemoveFiles']});\r\n\
-
-        \$synchronizationResult.Check();\r\n\
-			Write-Host "\$global:succeedTransferdFiles Files has been Uploaded.";\r\n\
-    }\r\n\
+# Main script\r\n
+try\r\n
+{\r\n
+    \$sessionOptions = New-Object WinSCP.SessionOptions;\r\n
+    \$sessionOptions.Protocol = [WinSCP.Protocol]::Sftp;\r\n
+    \$sessionOptions.UserName = "${props['Username']}";\r\n
+    \$sessionOptions.Password = "${props['Password']}";\r\n
+    \$sessionOptions.HostName = "${props['HostName']}";\r\n
+    \$sessionOptions.PortNumber = 22 ;\r\n
+    \$sessionOptions.GiveUpSecurityAndAcceptAnySshHostKey = "\$True";\r\n
+    \$session = New-Object WinSCP.Session;\r\n
+    try\r\n
+    {\r\n
+        # Will continuously report progress of synchronization;\r\n
+        \$session.add_FileTransferred( { FileTransferred(\$_) } );\r\n
+        \$session.Open(\$sessionOptions);\r\n
+        \$synchronizationResult = \$session.PutFiles(\r\n
+           "\\\\?\\${props['LDirectory']}", "${props['RDirectory']}", ${props['RemoveFiles']});\r\n
+        \$synchronizationResult.Check();\r\n
+        \$global:succeedTransferdFiles--;\r\n
+		Write-Host "Total: \$global:succeedTransferdFiles Files has been Uploaded.";\r\n
+    }\r\n
 """
 scriptBody << """\
-    finally\r\n\
-    {\r\n\
-        \$session.Dispose();\r\n\
-    }\r\n\
- \r\n\
-    exit 0;\r\n\
-}\r\n\
-catch [Exception]\r\n\
-{\r\n\
-    Write-Host \$_.Exception.Message;\r\n\
-    exit 1;\r\n\
-}\r\n\
+    finally { \$session.Dispose(); }\r\n
+     exit 0;\r\n
+}\r\n
+catch [Exception]\r\n
+{\r\n
+    Write-Host \$_.Exception.Message;\r\n
+    \$global:succeedTransferdFiles--;\r\n
+    Write-Host "Total: \$global:succeedTransferdFiles of \$Total Files has been Uploaded, there May got Some Files lost on the way.";\r\n
+    exit 1;\r\n
+}\r\n
 """
 	if (showScript) { 
 	println scriptBody 
