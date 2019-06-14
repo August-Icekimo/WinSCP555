@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<plugininfo>
+<author name='August Icekimo'>
+<organization>DTC</organization>
+<email>support@serena.com</email>
+<website>http://serena.com</website>
+</author>
+<integration type='Deploy' />
+<tool-description>SFTP Sync Directory plugin  [客製化WinSCP]</tool-description>
+<release-version>2.1</release-version>
+<release-notes>
+<release-note plugin-version='2'>
+Initial release</release-note>
+</release-notes>
+</plugininfo>

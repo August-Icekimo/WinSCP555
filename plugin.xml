@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.urbancode.com/PluginXMLSchema_v1">
+	<header>
+		<identifier version="2" name="SFTPSyncDirectory" id="com.urbancode.air.plugin.WinSCP"/>
+		<description>SFTP Sync Directory plugin</description>
+		<tag>WinSCP</tag>
+	</header>
+	<step-type name="SFTP Sync Artifacts">
+		<description>SFTP (come with Powershell WinSCP .NET assembly, Synchronize the artifacts to the target server)</description>
+		<properties>
+			<property name="Username" required="true">
+				<property-ui type="textBox" label="Username" default-value="admin" description="This is a mandatory text box."/>
+			</property>
+			<property name="Password" required="true">
+				<property-ui type="secureBox" label="Password" description="Enter the password in this field"/>
+			</property>
+			<property name="HostName" required="true">
+				<property-ui type="textAreaBox" default-value="...." label="SFTP target Host IP or FQDN" description="Get the Deply Target name or IP "/>
+			</property>
+			<!-- <property name="HostFingerprint" required="true">
+				<property-ui type="textAreaBox" label="Host RSA Fingerprint" default-value="**" description="RSA 2048 Fingerprint, this key for identify if target host has been modified (Maybe M.I.M Attack)"/>
+			</property> -->
+			<property name="LDirectory">
+				<property-ui type="textAreaBox" label="Local Directory :" default-value="D:\var\wrk\${p:component.name}" description="Specified Local Directory which will be sync. Working Directory(With Download Artifacts) is default . OR path (e.g) C:\SRA_agent\var\Component\webapps"/>
+			</property>
+			<property name="RDirectory" required="true">
+				<property-ui type="textAreaBox" label="Remote Directory :" default-value="\" description="Specified Remote Directory which will be sync.(e.g) tomcat/webapps OR /opt/tomcat/webapps"/>
+			</property>
+			<!-- 		<property name="checkBoxDemo">
+				<property-ui type="checkBox" label="Check box" description="A check box"/>
+			</property> -->
+			<property name="RemoveFiles">
+				<property-ui type="selectBox" label="Remove Obsolete Files ?" description="Deletes obsolete files"/>
+				<value label="Yes">1</value>
+				<value label="No">0</value>
+			</property>
+			<!-- <property name="commandPath">
+				<property-ui type="textBox" label="PowerShell Path" default-value="C:\Windows\System32\WindowsPowerShell\v1.0" description=""/>
+			</property> -->
+		</properties>
+		<post-processing>
+			<![CDATA[
+if (properties.get("exitCode") != 0) {
+properties.put(new java.lang.String("Status"),
+new java.lang.String("Failure")); }
+else {
+properties.put("Status", "Success");
+}
+]]>
+		</post-processing>
+		<command program="${GROOVY_HOME}/bin/groovy">
+			<arg value="-cp"/>
+			<arg path="classes:lib/Powershell.jar"/>
+			<arg file="sftpsync.groovy"/>
+			<arg file="${PLUGIN_INPUT_PROPS}"/>
+			<arg file="${PLUGIN_OUTPUT_PROPS}"/>
+		</command>
+	</step-type>
+	<step-type name="FTPS Sync Artifacts">
+		<description>FTPS (come with Powershell WinSCP .NET assembly, Synchronize the artifacts to the target server)</description>
+		<properties>
+			<property name="Username" required="true">
+			<property-ui type="textBox" label="Username" default-value="admin" description="Who is the ftp login account"/>
+			</property>
+			<property name="Password" required="true">
+				<property-ui type="secureBox" label="Password" description="Enter his password in this field"/>
+			</property>
+			<property name="HostName" required="true">
+				<property-ui type="textAreaBox" default-value="...." label="FTP target Host IP or FQDN" description="Get the Deply Target name or IP "/>
+			</property>
+			<property name="LDirectory">
+				<property-ui type="textAreaBox" label="Local Directory :" default-value="D:\var\wrk\${p:component.name}" description="Specified Local Directory which will be sync. Working Directory(With Download Artifacts) is default . OR path (e.g) C:\SRA_agent\var\Component\webapps"/>
+			</property>
+			<property name="RDirectory" required="true">
+				<property-ui type="textAreaBox" label="Remote Directory :" default-value="\" description="Specified Remote Directory which will be sync.(e.g) tomcat/webapps OR /opt/tomcat/webapps"/>
+			</property>
+			<property name="FtpSecure">
+				<property-ui type="selectBox" label="FTP mode ?" description="FTP Security Mode Type"/>
+				<value label="Implicit">Implicit</value>
+				<value label="SSL">ExplicitSsl</value>
+				<value label="TLS">ExplicitTls</value>
+				<value label="None">None</value>
+				</property>
+			<property name="PortNumber">
+				<property-ui type="textAreaBox" label="Remote PortNumber:" default-value="990" description="Specified Remote Site PortNumber"/>
+			</property>
+			<property name="RemoveFiles">
+				<property-ui type="selectBox" label="Remove Obsolete Files ?" description="Deletes obsolete files"/>
+				<value label="Yes">1</value>
+				<value label="No">0</value>
+			</property>
+		</properties>
+		<post-processing>
+			<![CDATA[
+if (properties.get("exitCode") != 0) {
+properties.put(new java.lang.String("Status"),
+new java.lang.String("Failure")); }
+else {
+properties.put("Status", "Success");
+}
+]]>
+		</post-processing>
+		<command program="${GROOVY_HOME}/bin/groovy">
+			<arg value="-cp"/>
+			<arg path="classes:lib/Powershell.jar"/>
+			<arg file="ftpsync.groovy"/>
+			<arg file="${PLUGIN_INPUT_PROPS}"/>
+			<arg file="${PLUGIN_OUTPUT_PROPS}"/>
+		</command>
+	</step-type>
+	<step-type name="FTPS Sync AdvanceOption">
+		<description>FTPS (Advance Synchronize the artifacts With WinSCP .NET assembly, More Options)</description>
+		<properties>
+			<property name="Username" required="true">
+			<property-ui type="textBox" label="Username" default-value="admin" description="Who is the ftp login account"/>
+			</property>
+			<property name="Password" required="true">
+				<property-ui type="secureBox" label="Password" description="Enter his password in this field"/>
+			</property>
+			<property name="HostName" required="true">
+				<property-ui type="textAreaBox" default-value="...." label="FTP target Host IP or FQDN" description="Get the Deply Target name or IP "/>
+			</property>
+			<property name="LDirectory">
+				<property-ui type="textAreaBox" label="Local Directory :" default-value="D:\var\wrk\${p:component.name}" description="Specified Local Directory which will be sync. Working Directory(With Download Artifacts) is default . OR path (e.g) C:\SRA_agent\var\Component\webapps"/>
+			</property>
+			<property name="RDirectory" required="true">
+				<property-ui type="textAreaBox" label="Remote Directory :" default-value="\" description="Specified Remote Directory which will be sync.(e.g) tomcat/webapps OR /opt/tomcat/webapps"/>
+			</property>
+			<property name="FtpSecure">
+				<property-ui type="selectBox" label="FTP mode ?" description="FTP Security Mode Type"/>
+				<value label="Implicit">Implicit</value>
+				<value label="SSL">ExplicitSsl</value>
+				<value label="TLS">ExplicitTls</value>
+				<value label="None">None</value>
+				</property>
+			<property name="PortNumber">
+				<property-ui type="textAreaBox" label="Remote PortNumber:" default-value="990" description="Specified Remote Site PortNumber"/>
+			</property>
+			<property name="RemoveFiles">
+				<property-ui type="selectBox" label="Remove Obsolete Files ?" description="Deletes obsolete files"/>
+				<value label="Yes">1</value>
+				<value label="No">0</value>
+			</property>
+			<property name="SessionOptionsAddRawSettings">
+				<property-ui type="textAreaBox" label="Additional Setting:" default-value="" description="Add More Session-Option lines"/>
+			</property>
+		</properties>
+		<post-processing>
+			<![CDATA[
+if (properties.get("exitCode") != 0) {
+properties.put(new java.lang.String("Status"),
+new java.lang.String("Failure")); }
+else {
+properties.put("Status", "Success");
+}
+]]>
+		</post-processing>
+		<command program="${GROOVY_HOME}/bin/groovy">
+			<arg value="-cp"/>
+			<arg path="classes:lib/Powershell.jar"/>
+			<arg file="ftpsync2.groovy"/>
+			<arg file="${PLUGIN_INPUT_PROPS}"/>
+			<arg file="${PLUGIN_OUTPUT_PROPS}"/>
+		</command>
+	</step-type>
+	<step-type name="SFTP Sync AdvanceOption">
+		<description>SFTP (Advance Synchronize the artifacts With WinSCP .NET assembly, More Options)</description>
+		<properties>
+			<property name="Username" required="true">
+				<property-ui type="textBox" label="Username" default-value="admin" description="This is a mandatory text box."/>
+			</property>
+			<property name="Password" required="true">
+				<property-ui type="secureBox" label="Password" description="Enter the password in this field"/>
+			</property>
+			<property name="HostName" required="true">
+				<property-ui type="textAreaBox" default-value="...." label="SFTP target Host IP or FQDN" description="Get the Deply Target name or IP "/>
+			</property>
+			<!-- <property name="HostFingerprint" required="true">
+				<property-ui type="textAreaBox" label="Host RSA Fingerprint" default-value="**" description="RSA 2048 Fingerprint, this key for identify if target host has been modified (Maybe M.I.M Attack)"/>
+			</property> -->
+			<property name="LDirectory">
+				<property-ui type="textAreaBox" label="Local Directory :" default-value="D:\var\wrk\${p:component.name}" description="Specified Local Directory which will be sync. Working Directory(With Download Artifacts) is default . OR path (e.g) C:\SRA_agent\var\Component\webapps"/>
+			</property>
+			<property name="RDirectory" required="true">
+				<property-ui type="textAreaBox" label="Remote Directory :" default-value="\" description="Specified Remote Directory which will be sync.(e.g) tomcat/webapps OR /opt/tomcat/webapps"/>
+			</property>
+			<!-- 		<property name="checkBoxDemo">
+				<property-ui type="checkBox" label="Check box" description="A check box"/>
+			</property> -->
+			<property name="RemoveFiles">
+				<property-ui type="selectBox" label="Remove Obsolete Files ?" description="Deletes obsolete files"/>
+				<value label="Yes">1</value>
+				<value label="No">0</value>
+			</property>
+			<property name="SessionOptionsAddRawSettings">
+				<property-ui type="textAreaBox" label="Additional Setting:" default-value="" description="Add More Session-Option lines"/>
+			</property>
+
+			<!-- <property name="commandPath">
+				<property-ui type="textBox" label="PowerShell Path" default-value="C:\Windows\System32\WindowsPowerShell\v1.0" description=""/>
+			</property> -->
+		</properties>
+		<post-processing>
+			<![CDATA[
+if (properties.get("exitCode") != 0) {
+properties.put(new java.lang.String("Status"),
+new java.lang.String("Failure")); }
+else {
+properties.put("Status", "Success");
+}
+]]>
+		</post-processing>
+		<command program="${GROOVY_HOME}/bin/groovy">
+			<arg value="-cp"/>
+			<arg path="classes:lib/Powershell.jar"/>
+			<arg file="sftpsync2.groovy"/>
+			<arg file="${PLUGIN_INPUT_PROPS}"/>
+			<arg file="${PLUGIN_OUTPUT_PROPS}"/>
+		</command>
+	</step-type>
+</plugin>

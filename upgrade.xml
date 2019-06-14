@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin-upgrade
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns="http://www.urbancode.com/UpgradeXMLSchema_v1">
+<migrate to-version="2">
+<migrate-command name="SFTP Sync Artifacts">
+<migrate-properties>
+<migrate-property name="HostName" old="HostName"/>
+<migrate-property name="LDirectory" old="LDirectory"/>
+</migrate-properties>
+</migrate-command>
+</migrate>
+<migrate to-version="2">
+<migrate-command name="FTPS Sync Artifacts">
+<migrate-properties>
+<migrate-property name="HostName" old="HostName"/>
+<migrate-property name="LDirectory" old="LDirectory"/>
+</migrate-properties>
+</migrate-command>
+</migrate>
+<migrate to-version="2">
+<migrate-command name="FTPS Sync AdvanceOption" />
+<migrate-property name="LDirectory" old="LDirectory"/>
+</migrate>
+<migrate to-version="2">
+<migrate-command name="SFTP Sync AdvanceOption" />
+<migrate-property name="LDirectory" old="LDirectory"/>
+</migrate>
+</plugin-upgrade>
