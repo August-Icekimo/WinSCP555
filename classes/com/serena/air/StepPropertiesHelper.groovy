@@ -26,6 +26,10 @@ class StepPropertiesHelper {
         return Boolean.parseBoolean(res);
     }
 
+    public String optional(String paramName) {
+        return optional(paramName, "");
+    }
+    
     public String optional(String paramName, String defValue) {
         String res = props.getProperty(paramName);
 
@@ -55,4 +59,8 @@ class StepPropertiesHelper {
     public def putAt(key, value){
         props[key] = value
     } 
+    
+    public static String[] splitTextArea(String text){
+        return text.replaceAll("\\s*(\n|^|\$)\\s*", "\$1").replaceAll("\\s*\n\\s*\n*\\s*", "\n").split("\n")
+    }
 }

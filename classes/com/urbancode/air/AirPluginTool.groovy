@@ -58,6 +58,14 @@ public class AirPluginTool {
         this.outProps.setProperty(name, serialize(value));
     }
 
+    public void setOutputProperties(Properties properties) {
+        for (Object key : properties.keySet()) {
+            String propName = (String) key;
+            String propValue = properties.getProperty(propName);
+            setOutputProperty(propName, propValue);
+        }
+    }
+
     public void setOutputProperties() {
         final OutputStream outputPropsStream = null;
         try {
