@@ -1,9 +1,12 @@
-import com.urbancode.air.CommandHelper;
-import com.urbancode.air.AirPluginTool;
+import com.urbancode.air.AirPluginTool
+import com.urbancode.air.CommandHelper
+import com.urbancode.air.ExitCodeException
 
+final def POWERSHELL_EXE = 'powershell.exe'
 final def workDir = new File('.').canonicalFile
+
 def apTool = new AirPluginTool(this.args[0], this.args[1]) //assuming that args[0] is input props file and args[1] is output props file
-def props = apTool.getStepProperties();
+def props = apTool.getStepProperties()
 
 def scriptBody = []
 scriptBody << """\
@@ -159,7 +162,10 @@ finally\r\n
     }\r\n
 }\r\n
 """
-def inputPropsFile = new File(args[0])
+
+//def commandPath = props['commandPath'] != ("") ? props['commandPath'] : ""
+def commandPath = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0" // PowerShell Pathdef inputPropsFile = new File(args[0])
+
 def outputPropsFile = new File(args[1])
 inputPropsString = '\'' + inputPropsFile.absolutePath + '\''
 outputPropsString = '\'' + outputPropsFile.absolutePath + '\''
@@ -174,7 +180,7 @@ def scriptData = new File(ScriptDir,"Script${curTime}.ps1")
 scriptData.deleteOnExit()
 scriptData.createNewFile()
 scriptData.write("")
-scriptData.append(scriptBody[0])
+scriptData.append(scriptBody[0]) //scriptBody was 3 parts in list.
 scriptData.append(scriptBody[1])
 scriptData.append(scriptBody[2])
 def ScriptPath = scriptData.absolutePath
@@ -182,31 +188,59 @@ ScriptPath = "$ScriptPath"
 
 def cmdArgs = []
 
-//def commandPath = props['commandPath'] != ("") ? props['commandPath'] : ""
-def commandPath = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0" // PowerShell Path
-if (!commandPath.equals("")) {
-    commandPath.trim()
-        while (commandPath.endsWith("\\")) {
-        commandPath = commandPath.substring(0, commandPath.length-1)
+def errorHandling = { proc ->
+    def out = new PrintStream(System.out, true)
+    def err = new StringBuilder()
+
+    proc.out.close() // close stdin
+
+    try {
+        proc.waitForProcessOutput(out, err)
+
+        if (err) {
+            throw new ExitCodeException("Command failed with error: \n" + err)
+        }
+    } finally {
+        out.flush()
     }
-    cmdArgs << commandPath + File.separator + "powershell.exe"
 }
 
-else {
-    cmdArgs << "powershell.exe"
+// if (!commandPath.equals("")) {
+    // commandPath.trim()
+if (commandPath) {
+    commandPath = commandPath.trim()
+
+    if (commandPath.toLowerCase().endsWith(POWERSHELL_EXE)) {
+        cmdArgs << commandPath
+    } else {
+
+        while (commandPath.endsWith("\\")) {
+        commandPath = commandPath.substring(0, commandPath.length() - 1)
+    }
+
+    cmdArgs << commandPath + File.separator + POWERSHELL_EXE
+}
+} else {
+    cmdArgs << POWERSHELL_EXE
 }
 
-cmdArgs << ";" << "set-executionpolicy unrestricted" << ";" << "[Threading.Thread]::CurrentThread.CurrentUICulture = 'en-US'" << ";"
-cmdArgs << scriptData.absolutePath  << inputPropsString << outputPropsString
+// cmdArgs << ";" << "set-executionpolicy unrestricted" << ";" << "[Threading.Thread]::CurrentThread.CurrentUICulture = 'en-US'" << ";"
+// cmdArgs << scriptData.absolutePath  << inputPropsString << outputPropsString
+cmdArgs << "-executionpolicy" << "unrestricted" << "-command "
+cmdArgs << "&('$scriptData.absolutePath') ('$inputPropsFile.absolutePath') ('$outputPropsFile.absolutePath')"
 
-def exitCode = ch.runCommand("Deploy script Start... FTPS", cmdArgs)
+// def exitCode = ch.runCommand("Deploy script Start... FTPS", cmdArgs)
+try {
+    def exitCode = ch.runCommand("Deploy script Start... FTPS", cmdArgs, errorHandling)
 
-
-if (exitCode != 0) {
-    println "Warning !! Deployment Failed."
+    if (exitCode != 0) {
+        println "Warning !! Deployment Failed."
     System.exit(exitCode)
-}
-else {
-    println "Deployment successfully."
+    } else {
+        println "Deployment successfully."
     System.exit(0)
+    }
+} catch (ExitCodeException e) {
+    println "Failed to execute Powershell script.\n" + e
+    System.exit(1)
 }
