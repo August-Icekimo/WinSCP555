@@ -67,7 +67,7 @@ function FileTransferred
 
     Param($e, $succeedTransferdFiles)
 
-    if ($e.Error -eq $Null)
+    if ($Null -eq $e.Error)
 
     {
 
@@ -85,7 +85,7 @@ function FileTransferred
 
     }
 
-    if (( $e.Touch -ne $Null ) -and ($e.Touch.Error -ne $Null))
+    if (( $Null -ne $e.Touch ) -and ($Null -ne $e.Touch.Error))
 
     {
 
@@ -93,7 +93,7 @@ function FileTransferred
 
     }
 
-    if (($e.Chmod -ne $Null ) -and ($e.Chmod.Error -ne $Null))
+    if (($Null -ne $e.Chmod ) -and ($Null -ne $e.Chmod.Error))
 
     {
 
@@ -163,6 +163,7 @@ try
 catch [Exception]
 
 {
+    { Write-Host"Exception caught. Something went wrong."; };
 
     $Global:succeedTransferdFiles--;
 
@@ -194,15 +195,15 @@ finally
 
     if ($session.Opened -eq $true) {Write-Host  "Successful uploaded:"}
 
-    $synchronizationResult.Transfers | Where-Object {$_.Error -eq $null }|ForEach-Object {Write-Host $_.Destination -foregroundcolor Green}
+    $synchronizationResult.Transfers | Where-Object {$Null -eq $_.Error }|ForEach-Object {Write-Host $_.Destination -foregroundcolor Green}
 
     if ($synchronizationResult.Failures.Count -gt 0 )
 
     {
 
-        $Failures = $synchronizationResult.Transfers | Where-Object {$_.Error -ne $null } | Select-Object -Property FileName;
+        $Failures = $synchronizationResult.Transfers | Where-Object {$Null -ne $_.Error } | Select-Object -Property FileName;
 
-        if ($Failures.FileName -ne $null ) 
+        if ($Null  -ne $Failures.FileName ) 
 
 		{
 
