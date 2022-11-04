@@ -1,104 +1,100 @@
-    $PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA");
+function Get-Example 
+{
+    <#
+    .SYNOPSIS
 
-    if ($PSdebug -like "PLEASE" ) {$PSdebug = $True;Write-Host "--DTC Analyst is waiting.";}else {$PSdebug = $False};
+    .DESCRIPTION
 
-    $PSdebug = $True
+    .PARAMETER Parameter01
 
-    $Global:succeedTransferdFiles = 1;
+    .INPUTS
 
-    $Global:LocalFilesCount = 0;
+    .OUTPUTS
 
+    .EXAMPLE
+
+    .LINK
+
+    .NOTES
+
+
+    #>
+
+}
+
+# Get a EnvironmentVariable DTC_ANA=PLEASE to enable debug mode.
+$PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA");
+if ($PSdebug -like "PLEASE" ) 
+{
+    $PSdebug = $True;Write-Host "--DTC Analyst is waiting.";
+}
+else 
+{
+    $PSdebug = $False
+}
+#    $PSdebug = $True # Force to debug mode.
+
+$Global:succeedTransferdFiles = 1;
+$Global:LocalFilesCount = 0;
+
+# Test if WinSCP.dll is placed "C:\Windows\System32\WinSCPnet.dll"
 try
-
 {
-
     Add-Type -Path "C:\Windows\System32\WinSCPnet.dll";
-
     if ($PSdebug) {Write-Host "--WinSCP .NET Imported Successfully."};
-
 }
-
-
 catch
-
 {
-
     if ($PSdebug) {Write-Host "--WinSCP .NET Imported Faild. Agent JRE Setting Might cause this fail, too."};
-
 }
-
 
 function GetFilesMD5
-
+# Function to get sigle file MD5
 {
-
  param ([Parameter(Mandatory=$True,Position=0)][string]$FilePath)
 
     $jsonf += "{`"File`":`"$FilePath`",`n`r";
-
 	$FilePath = $FilePath.TrimStart('\\?\');
-
 	$MD5s = Get-FileHash "$FilePath" -Algorithm MD5;
-
 	$MD5String = $MD5s.Hash;
-
     $jsonf += " `"MD5`":`"$MD5String`"}"
-
     return $jsonf;
-
 }
 
 
 function CountLocalFiles
-
+# Fuction to count local files.
 {
-
-Write-Host -NoNewline "Total: ";
-
+    Write-Host -NoNewline "Total: ";
     $Global:LocalFilesCount = (Get-ChildItem -Path "D:\var\wrk\BHCF-10.10.133.1~2" -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer -eq $false } |  Measure-Object).Count;
-
     return $Global:LocalFilesCount;
-
 }
 
 function FileTransferred
-
+# Function to count how many files transferd.
 {
 
     Param($e, $succeedTransferdFiles)
 
     if ($Null -eq $e.Error)
-
     {
-
         Write-Host -NoNewline $Global:succeedTransferdFiles".. ";
-
 		$Global:succeedTransferdFiles++;
-
     }
-
     else
-
     {
-
         Write-Host "Transfer Failed!!!`t`r`n";
-
     }
 
+    # Print out what may cause the transfer error .
     if (( $Null -ne $e.Touch ) -and ($Null -ne $e.Touch.Error))
-
     {
-
-            Write-Host -NoNewline "<Touch.Error ";
-
+        Write-Host -NoNewline "<Touch.Error ";
     }
 
     if (($Null -ne $e.Chmod ) -and ($Null -ne $e.Chmod.Error))
-
     {
-
-            Write-Host  -NoNewline "<Chmod.Error";
-
+        Write-Host  -NoNewline "<Chmod.Error";
     }
 
 }
@@ -107,192 +103,121 @@ function FileTransferred
 try
 
 {
-
+    # Initial the transfer session parameters
 	$sessionOptions = New-Object WinSCP.SessionOptions;
-
     $sessionOptions.Protocol = [WinSCP.Protocol]::Ftp;
-
     $sessionOptions.FtpSecure = "ExplicitTls";
-
     $sessionOptions.UserName = "";
-
     $sessionOptions.Password = "+";
-
     $sessionOptions.HostName = "10.10.1.1";
-
     $sessionOptions.PortNumber = "991";
-
     $sessionOptions.GiveUpSecurityAndAcceptAnyTlsHostCertificate = "$True";
-
     $session = New-Object WinSCP.Session;
 
+    # Open session    
     try
-
     {
-
         $session.add_FileTransferred( { FileTransferred($_) } );
-
         Write-Host  -NoNewline "Try to open Seesion";
-
-		try { $session.Open($sessionOptions);}
-
+        try { $session.Open($sessionOptions);}
         catch { $session.Output | Select-object -skip 8; }
-
         if ($session.Opened) {Write-Host -NoNewLine "Session Opened." ; CountLocalFiles;};
-
         $synchronizationResult = $session.PutFiles(  "\\?\D:\var\wrk\BHCF-10.10.133.1~2", "\", 0 );
-
-     }
-
-     finally
-
-     {
-
+    }
+    finally
+    {
         $synchronizationResult.Check();
-
         $Global:succeedTransferdFiles--;
-
-		Write-Host -NoNewLine "Total: $Global:succeedTransferdFiles Files ";
-
-     }
-
-     exit 0;
+        Write-Host -NoNewLine "Total: $Global:succeedTransferdFiles Files ";
+    }
+    exit 0;
 
 }
 
 catch [Exception]
-
 {
-    { Write-Host"Exception caught. Something went wrong."; };
-
+    Write-Host"Exception caught. Something went wrong.";
     $Global:succeedTransferdFiles--;
-
     $successfulUpload = $synchronizationResult.Transfers.Count - $synchronizationResult.Failures.Count;
 
     if ($successfulUpload -ne $Global:succeedTransferdFiles)
-
-    { Write-Host"File Transfer is stopped."; };
+    { 
+        Write-Host"File Transfer is stopped."; 
+    }
 
     exit 1;
-
 }
 
 finally
-
 {
 
     if ($Global:succeedTransferdFiles -eq 0)
- 
 	{
-
 		Write-Host "Version Files which imported was empty. Nothing is deployed."
-
 		exit 1;
-
 	}
 
-	if ($synchronizationResult.Failures.Count -gt 0 ){Write-Host "Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been Uploaded."};
+	if ($synchronizationResult.Failures.Count -gt 0 )
+    {
+        Write-Host "Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been Uploaded."
+    }
 
-    if ($session.Opened -eq $true) {Write-Host  "Successful uploaded:"}
+    if ($session.Opened -eq $true) 
+    {
+        Write-Host  "Successful uploaded:"
+    }
 
     $synchronizationResult.Transfers | Where-Object {$Null -eq $_.Error }|ForEach-Object {Write-Host $_.Destination -foregroundcolor Green}
-
     if ($synchronizationResult.Failures.Count -gt 0 )
-
     {
-
         $Failures = $synchronizationResult.Transfers | Where-Object {$Null -ne $_.Error } | Select-Object -Property FileName;
-
         if ($Null  -ne $Failures.FileName ) 
-
 		{
-
 			$RemotePath = Split-Path $Failures.FileName ;
-
-        Write-Host " Local MD5 Checksum in JSON format, may compare to server-side file.";
-
-		$RS = "D:\var\wrk\BHCF-10.10.133.1~2";
-
-		$RemotePath = $RemotePath.Replace("\\?\$RS", "");
-
-        $RemotePath = "\" + "$RemotePath";
-
-    foreach ( $Sfilename in $Failures.FileName)
-
-    {
-
-		GetFilesMD5($Sfilename);
-
-        if ($PSdebug)
-
-        {
-
-            $Sfilename = $Sfilename.Replace("\\?\", "");
-
-			$Sfilename = Get-ChildItem $Sfilename;
-
-            $Suspected = $RemotePath + "/" + $Sfilename.Name;
-
-            $Suspected = $Suspected.Replace( "\", "/" );
-
-			$Suspected = $Suspected.Replace( "//", "/" );
-
-                $x = $session.FileExists($Suspected);
-
-                if ( $x )
-
+            Write-Host " Local MD5 Checksum in JSON format, may compare to server-side file.";
+		    $RS = "D:\var\wrk\BHCF-10.10.133.1~2";
+            $RemotePath = $RemotePath.Replace("\\?\$RS", "");
+            $RemotePath = "\" + "$RemotePath";
+            foreach ( $Sfilename in $Failures.FileName)
+            {
+                GetFilesMD5($Sfilename);
+                if ($PSdebug)
                 {
+                    $Sfilename = $Sfilename.Replace("\\?\", "");
+                    $Sfilename = Get-ChildItem $Sfilename;
+                    $Suspected = $RemotePath + "/" + $Sfilename.Name;
+                    $Suspected = $Suspected.Replace( "\", "/" );
+                    $Suspected = $Suspected.Replace( "//", "/" );
+                    $x = $session.FileExists($Suspected);
 
-                    $tempfilepath = "D:\var\wrk\BHCF-10.10.133.1~2" + "\" + "CHECKSUMMD5TEMPFILE";
-
-                    try
-
+                    if ( $x )
                     {
-
-						$Global:succeedTransferdFiles++;
-
-						$session.GetFiles( $Suspected, $tempfilepath).Check();
-
-						$MD5 = Get-FileHash "$tempfilepath" -Algorithm MD5;
-
-                        $MD5String = $MD5.Hash;
-
-                        Write-Host "Remote File Found: $Suspected `r`n  MD5: "$MD5String .
-
+                        # Try to find out which file may broken.
+                        $tempfilepath = "D:\var\wrk\BHCF-10.10.133.1~2" + "\" + "CHECKSUMMD5TEMPFILE";
+                        try
+                        {
+                            $Global:succeedTransferdFiles++;
+                            $session.GetFiles( $Suspected, $tempfilepath).Check();
+                            $MD5 = Get-FileHash "$tempfilepath" -Algorithm MD5;
+                            $MD5String = $MD5.Hash;
+                            Write-Host "Remote File Found: $Suspected `r`n  MD5: "$MD5String .
+                        }
+                        finally
+                        {
+                        # clean up 
+                            Remove-Item $tempfilepath;
+                            $session.Dispose();
+                        }
                     }
-
-                    finally
-
-                    {
-
-                        Remove-Item $tempfilepath;
-
-						$session.Dispose();
-
-                    }
-
                 }
-
-        }
-
-    }
-
+            }
 		}
-
 		else 
-
 		{
-
 			Write-Host "Unauthorized Remote files may cause this. No checksum or file-compare need." 
 		}
-
-    $session.Dispose();
-
-    $ErrMsg = $synchronizationResult.Failures;
-
-    Write-Host "Detail Error Message : `r`n $ErrMsg";
-
+        $session.Dispose();
+        $ErrMsg = $synchronizationResult.Failures;
+        Write-Host "Detail Error Message : `r`n $ErrMsg";
     }
-
 }
-
