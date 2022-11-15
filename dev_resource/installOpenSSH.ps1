@@ -5,7 +5,7 @@ Set-Variable -Name "serverStatus" -Scope global -Description "OpenSSH Server ins
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
     [Security.Principal.WindowsBuiltInRole] "Administrator"))
 {
-    Write-Warning "未使用管理者權限(Adminidtrator)將導致無法安裝OpenSSH！！`n請重新用管理者權限再執行一次。"
+    Write-Warning "未使用管理者權限(Adminidtrator)將導致無法安裝OpenSSH!!`n請重新用管理者權限再執行一次。"
     exit 0
 }
 
@@ -55,7 +55,7 @@ catch
 finally 
 {
     checkOpenSSHStatus
-    Write-Host "安裝完畢，啟動服務：Start the sshd service"
+    Write-Host "安裝完畢,啟動服務: Start the sshd service"
     Start-Service sshd
 
     # OPTIONAL but recommended:
@@ -73,3 +73,17 @@ else
 {
     Write-Output "'OpenSSH-Server-In-TCP'防火牆規則已經存在(已建立)。"
 }
+
+Write-Host "建立一個本地使用者帳號,作為sftp傳輸使用" 
+$username = Read-Host -Prompt "輸入使用者名稱"
+$password = Read-Host -Prompt "輸入使用者密碼" -AsSecureString 
+try 
+{
+    New-LocalUser -Name "$username" -Password $password -FullName "sftp User" -Description "sftp user"
+}
+catch
+{
+    Write-Host "Ooops, something go wrong."
+    Write-Host "$Error[0]" 
+}
+Write-Host "修改 C:\ProgramData\ssh\sshd_config" 
