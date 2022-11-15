@@ -34,7 +34,7 @@ try
     }
     if ( $serverStatus -eq "NotPresent" )
     {
-        # Install the OpenSSH Client
+        # Install the OpenSSH Server
         try {
             Add-WindowsCapability -Online -Name "OpenSSH.Server~~~~0.0.1.0"
         }
