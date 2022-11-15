@@ -6,8 +6,6 @@ function Get-Example
     .DESCRIPTION
 
 # 可以直接修改下列參數進行傳輸測試
-    .PARAMETER ${props['FtpSecure']}
-        $FtpSecure = "ExplicitTls"
     .PARAMETER ${props['Username']}
         $Username = ""
     .PARAMETER ${props['Password']}
@@ -15,11 +13,11 @@ function Get-Example
     .PARAMETER ${props['HostName']}
         $HostName = "10.10.133.1"
     .PARAMETER ${props['PortNumber']}
-        $PortNumber = "991"
+        $PortNumber = "22"
     .PARAMETER ${props['LDirectory']}
-        $LDirectory = "D:\var\wrk\"
+        $LDirectory = "D:\var\wrk\BHCF-10.10.133.1~2"
     .PARAMETER ${props['RDirectory']}
-        $RDirectory = "\"
+        $RDirectory = ""
     .PARAMETER ${props['RemoveFiles']}
         $RemoveFiles = "0"
     .INPUTS
@@ -129,13 +127,13 @@ try
 {
     # Initial transfer session parameters with session object
 	$sessionOptions = New-Object WinSCP.SessionOptions
-    $sessionOptions.Protocol = [WinSCP.Protocol]::Ftp
-    $sessionOptions.FtpSecure = "$FtpSecure"
+    $sessionOptions.Protocol = [WinSCP.Protocol]::Sftp
     $sessionOptions.UserName = "$Username"
     $sessionOptions.Password = "$Password"
     $sessionOptions.HostName = "$HostName"
     $sessionOptions.PortNumber = "$PortNumber"
-    $sessionOptions.GiveUpSecurityAndAcceptAnyTlsHostCertificate = "$True"
+#    $sessionOptions.SshHostKeyPolicy = "AcceptNew"
+    $sessionOptions.GiveUpSecurityAndAcceptAnySshHostKey = "True"
     $session = New-Object WinSCP.Session
 
     # Open transfer session    
