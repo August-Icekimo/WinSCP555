@@ -1,4 +1,4 @@
-
+﻿
 Set-Variable -Name "clientStatus" -Scope global -Description "OpenSSH Client install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Client*').State
 Set-Variable -Name "serverStatus" -Scope global -Description "OpenSSH Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*').State
 # 先行檢查是否有管理者權限可以安裝

@@ -1,8 +1,8 @@
-function Get-Example 
+﻿function Get-Example 
 {
     <#
     .SYNOPSIS
-        透過Powershell使用WinSCP.dll元件進行FTPS/SFTP傳輸的通用腳本
+        透過Powershell使用WinSCP.dll元件進行SFTP傳輸的通用腳本
     .DESCRIPTION
 
 # 可以直接修改下列參數進行傳輸測試
@@ -11,13 +11,13 @@ function Get-Example
     .PARAMETER ${props['Password']}
         $Password = ""
     .PARAMETER ${props['HostName']}
-        $HostName = "10.10.133.1"
+        $HostName = "192.168.1.198"
     .PARAMETER ${props['PortNumber']}
         $PortNumber = "22"
     .PARAMETER ${props['LDirectory']}
-        $LDirectory = "D:\var\wrk\BHCF-10.10.133.1~2"
+        $LDirectory = "D:\varwrk"
     .PARAMETER ${props['RDirectory']}
-        $RDirectory = ""
+        $RDirectory = "/"
     .PARAMETER ${props['RemoveFiles']}
         $RemoveFiles = "0"
     .INPUTS
@@ -45,7 +45,7 @@ else
 {
     $PSdebug = $False
 }
-#    $PSdebug = $True # Force to debug mode.
+    $PSdebug = $True # Force to debug mode.
 
 $Global:succeedTransferdFiles = 1
 $Global:LocalFilesCount = 0
@@ -85,7 +85,7 @@ function CountLocalFiles
 # Fuction to count local files.
 {
     Write-Host -NoNewline " 04 Total: "
-    $Global:LocalFilesCount = (Get-ChildItem -Path "$LDirectory" -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer -eq $false } |  Measure-Object).Count
+    $Global:LocalFilesCount = (Get-ChildItem -Path "$LDirectory" -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer -eq $False } |  Measure-Object).Count
     Write-Host -NoNewline "$Global:LocalFilesCount files count ..."
     return $Global:LocalFilesCount
 }
@@ -132,7 +132,7 @@ try
     $sessionOptions.Password = "$Password"
     $sessionOptions.HostName = "$HostName"
     $sessionOptions.PortNumber = "$PortNumber"
-#    $sessionOptions.SshHostKeyPolicy = "AcceptNew"
+# Reserve Future Version   $sessionOptions.SshHostKeyPolicy = "AcceptNew"
     $sessionOptions.GiveUpSecurityAndAcceptAnySshHostKey = "True"
     $session = New-Object WinSCP.Session
 
@@ -141,6 +141,10 @@ try
     {
         $session.add_FileTransferred( { FileTransferred($_) } )
         Write-Host  -NoNewline " 00 Session options loaded ..."
+        if ($PSdebug)
+        {
+            Write-Host " ($sessionOptions ) "
+        }
         try 
         {
             Write-Host  -NoNewline " 01 Now opening Session to $HostName ..."
@@ -150,12 +154,14 @@ try
         {
             # Pront out the Error message.
             # $session.Output | Select-object -skip 8
-            Write-Host -NoNewLine " ($session.Output | Select-object -skip 8) "
+            Write-Host -NoNewLine " ($session.Output) "
         }
+
         if ($session.Opened)
         {
             Write-Host -NoNewLine " 02 Session Opened ..."
             CountLocalFiles
+            Write-Host -NoNewLine " 05 Uploading.."
         }
         $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", 0 )
     }
@@ -163,7 +169,7 @@ try
     {
         $synchronizationResult.Check()
         $Global:succeedTransferdFiles--
-        Write-Host -NoNewLine " 03 Total: $Global:succeedTransferdFiles Files."
+        Write-Host -NoNewLine " 06 Total: $Global:succeedTransferdFiles Files."
     }
     exit 0
 
@@ -172,13 +178,14 @@ try
 catch [Exception]
 # 抓到執行錯誤，exit 1
 {
-    Write-Host" 91 Exception caught. Something went wrong."
+
+    Write-Host " 91 Exception caught. Something went wrong."
     $Global:succeedTransferdFiles--;
     $successfulUpload = $synchronizationResult.Transfers.Count - $synchronizationResult.Failures.Count
 
     if ($successfulUpload -ne $Global:succeedTransferdFiles)
     { 
-        Write-Host" 92 File transfer stopped, and files count not match."
+        Write-Host " 92 File transfer stopped, and files count not match."
     }
     $session.Dispose() # Maybe session was started.
     $ErrMsg = $synchronizationResult.Failures
@@ -190,10 +197,10 @@ finally
 # 傳輸後核對檢查
 {
 
-    if ($session.Opened -eq $true) 
+    if ($session.Opened -eq $True) 
     # 如果有成功連線，就計算檔案傳輸完成數
     {
-        Write-Host  "Successful uploaded: $Global:succeedTransferdFiles ... "
+        Write-Host  " 07 Successful uploaded: $Global:succeedTransferdFiles ... "
     }
     else
     # 如果Session連線失敗，計算檔案數也是0，就印出訊息
@@ -217,7 +224,7 @@ finally
 	if ($synchronizationResult.Failures.Count -gt 0 )
     # 如果計算出傳輸失敗數
     {
-        Write-Host "Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been uploaded."
+        Write-Host " 07 Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been uploaded."
         if ($PSdebug)
         {
             $Failures = $synchronizationResult.Transfers | Where-Object {$Null -ne $_.Error } | Select-Object -Property FileName
@@ -269,5 +276,5 @@ finally
         }
     }
     $session.Dispose()
-    Write-Host " 99 Transfer Session Done."
+    Write-Host " 99 Transfer Session Closed."
 }
