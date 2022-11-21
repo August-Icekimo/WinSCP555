@@ -7,15 +7,15 @@
 
 # 可以直接修改下列參數進行傳輸測試
     .PARAMETER ${props['Username']}
-        $Username = ""
+        $Username = "libsftphnms"
     .PARAMETER ${props['Password']}
-        $Password = ""
+        $Password = "1qaz@WSX"
     .PARAMETER ${props['HostName']}
         $HostName = "192.168.1.198"
     .PARAMETER ${props['PortNumber']}
         $PortNumber = "22"
     .PARAMETER ${props['LDirectory']}
-        $LDirectory = "D:\varwrk"
+        $LDirectory = "C:\varwrk"
     .PARAMETER ${props['RDirectory']}
         $RDirectory = "/"
     .PARAMETER ${props['RemoveFiles']}
@@ -190,6 +190,12 @@ catch [Exception]
     $session.Dispose() # Maybe session was started.
     $ErrMsg = $synchronizationResult.Failures
     Write-Host " 94 Detail Error Message : `r`n $ErrMsg"
+    if ($PSdebug)
+    {
+        New-EventLog –LogName Application –Source “Deployment Automation”
+        Write-EventLog –LogName Application –Source “Deployment Automation” –EntryType Error –EventID 2 –Message “\$ErrMsg"
+        Remove-EventLog –Source “Deployment Automation"
+    }
     exit 1
 }
 
@@ -198,7 +204,7 @@ finally
 {
 
     if ($session.Opened -eq $True) 
-    # 如果有成功連線，就計算檔案傳輸完成數
+    # 如果有成功打開連線，就計算檔案傳輸完成數
     {
         Write-Host  " 07 Successful uploaded: $Global:succeedTransferdFiles ... "
     }
