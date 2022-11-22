@@ -15,7 +15,7 @@
     .PARAMETER ${props['PortNumber']}
         $PortNumber = "22"
     .PARAMETER ${props['LDirectory']}
-        $LDirectory = "C:\varwrk"
+        $LDirectory = "C:\varwrk\redpill-load\master\*"
     .PARAMETER ${props['RDirectory']}
         $RDirectory = "/"
     .PARAMETER ${props['RemoveFiles']}
@@ -109,7 +109,7 @@ function FileTransferred
     }
 
     # Print out what may cause the transfer error .
-    if (( $Null -ne $e.Touch ) -and ($Null -ne $e.Touch.Error))
+    if (($Null -ne $e.Touch ) -and ($Null -ne $e.Touch.Error))
     # 無法變更傳輸後檔案時間
     {
         Write-Host -NoNewline "<Touch.Error "
@@ -140,36 +140,35 @@ try
     try
     {
         $session.add_FileTransferred( { FileTransferred($_) } )
-        Write-Host  -NoNewline " 00 Session options loaded ..."
+        Write-Host " 00 Session options loaded ..."
         if ($PSdebug)
         {
             Write-Host " ($sessionOptions ) "
         }
         try 
         {
-            Write-Host  -NoNewline " 01 Now opening Session to $HostName ..."
+            Write-Host " 01 Now opening Session to $HostName ..."
             $session.Open($sessionOptions)
         }
         catch 
         {
-            # Pront out the Error message.
-            # $session.Output | Select-object -skip 8
-            Write-Host -NoNewLine " ($session.Output) "
+            # Print out the Error message.
+            Write-Host ($session.Output | Out-String)
         }
 
         if ($session.Opened)
         {
-            Write-Host -NoNewLine " 02 Session Opened ..."
+            Write-Host " 02 Session Opened ..."
             CountLocalFiles
-            Write-Host -NoNewLine " 05 Uploading.."
+            Write-Host " 05 Uploading.."
         }
-        $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", 0 )
+        $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", $RemoveFiles )
     }
     finally
     {
         $synchronizationResult.Check()
         $Global:succeedTransferdFiles--
-        Write-Host -NoNewLine " 06 Total: $Global:succeedTransferdFiles Files."
+        Write-Host " 06 Total: $Global:succeedTransferdFiles Files."
     }
     exit 0
 
@@ -218,7 +217,7 @@ finally
             Write-Host "$Global:succeedTransferdFiles of $Global:LocalFilesCount Count."
             if ($PSdebug)
             {
-                Write-Host -NoNewLine " $session.Output "
+                Write-Host ($session.Output | Out-String)
             }
             # exit 1
         }
@@ -233,14 +232,17 @@ finally
         Write-Host " 07 Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been uploaded."
         if ($PSdebug)
         {
+            #試圖找出斷頭的檔案，應該MD5會不一樣
             $Failures = $synchronizationResult.Transfers | Where-Object {$Null -ne $_.Error } | Select-Object -Property FileName
             if ($Null  -ne $Failures.FileName ) 
             {
+                #先處理檔案路徑轉換
                 $RemotePath = Split-Path $Failures.FileName
                 Write-Host " Local MD5 Checksum in JSON format, may compare to server-side file."
                 $RS = "$RDirectory"
                 $RemotePath = $RemotePath.Replace("\\?\$RS", "")
                 $RemotePath = "\" + "$RemotePath"
+                #逐一比對檔案MD5 Checksum
                 foreach ( $Sfilename in $Failures.FileName)
                 {
                     GetFilesMD5($Sfilename)
@@ -252,6 +254,7 @@ finally
                         $Suspected = $Suspected.Replace( "\", "/" )
                         $Suspected = $Suspected.Replace( "//", "/" )
                         $x = $session.FileExists($Suspected)
+                        #如果有嫌犯，試圖抓回來查看
 
                         if ( $x )
                         {
@@ -269,7 +272,6 @@ finally
                             {
                                 # clean up 
                                 Remove-Item $tempfilepath
-                                $session.Dispose()
                             }
                         }
                     }
