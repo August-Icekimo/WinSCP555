@@ -87,7 +87,7 @@ function CountLocalFiles
 # Fuction to count local files.
 {
     Write-Host -NoNewline " 04 Total: "
-    $Global:LocalFilesCount = (Get-ChildItem -Path "$LDirectory" -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer -eq $false } |  Measure-Object).Count
+    $Global:LocalFilesCount = (Get-ChildItem -Path "$LDirectory" -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer -eq $False } |  Measure-Object).Count
     Write-Host -NoNewline "$Global:LocalFilesCount files count ..."
     return $Global:LocalFilesCount
 }
@@ -111,7 +111,7 @@ function FileTransferred
     }
 
     # Print out what may cause the transfer error .
-    if (( $Null -ne $e.Touch ) -and ($Null -ne $e.Touch.Error))
+    if (($Null -ne $e.Touch ) -and ($Null -ne $e.Touch.Error))
     # 無法變更傳輸後檔案時間
     {
         Write-Host -NoNewline "<Touch.Error "
@@ -142,30 +142,30 @@ try
     try
     {
         $session.add_FileTransferred( { FileTransferred($_) } )
-        Write-Host  -NoNewline " 00 Session options loaded ..."
+        Write-Host " 00 Session options loaded ..."
         try 
         {
-            Write-Host  -NoNewline " 01 Now opening Session to $HostName ..."
+            Write-Host " 01 Now opening Session to $HostName ..."
             $session.Open($sessionOptions)
         }
         catch 
         {
             # Pront out the Error message.
-            # $session.Output | Select-object -skip 8
-            Write-Host -NoNewLine " ($session.Output | Select-object -skip 8) "
+            Write-Host ($session.Output | Out-String)
         }
         if ($session.Opened)
         {
-            Write-Host -NoNewLine " 02 Session Opened ..."
+            Write-Host " 02 Session Opened ..."
             CountLocalFiles
+            Write-Host " 05 Uploading.."
         }
-        $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", 0 )
+        $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", $RemoveFiles )
     }
     finally
     {
         $synchronizationResult.Check()
         $Global:succeedTransferdFiles--
-        Write-Host -NoNewLine " 03 Total: $Global:succeedTransferdFiles Files."
+        Write-Host " 03 Total: $Global:succeedTransferdFiles Files."
     }
     exit 0
 
@@ -185,6 +185,12 @@ catch [Exception]
     $session.Dispose() # Maybe session was started.
     $ErrMsg = $synchronizationResult.Failures
     Write-Host " 94 Detail Error Message : `r`n $ErrMsg"
+    if ($PSdebug)
+    {
+        New-EventLog –LogName Application –Source “Deployment Automation”
+        Write-EventLog –LogName Application –Source “Deployment Automation” –EntryType Error –EventID 2 –Message “\$ErrMsg"
+        Remove-EventLog –Source “Deployment Automation"
+    }
     exit 1
 }
 
@@ -195,7 +201,7 @@ finally
     if ($session.Opened -eq $true) 
     # 如果有成功連線，就計算檔案傳輸完成數
     {
-        Write-Host  "Successful uploaded: $Global:succeedTransferdFiles ... "
+        Write-Host  " 07 Successful uploaded: $Global:succeedTransferdFiles ... "
     }
     else
     # 如果Session連線失敗，計算檔案數也是0，就印出訊息
@@ -207,7 +213,7 @@ finally
             Write-Host "$Global:succeedTransferdFiles of $Global:LocalFilesCount Count."
             if ($PSdebug)
             {
-                Write-Host -NoNewLine " $session.Output "
+                Write-Host ($session.Output | Out-String)
             }
             # exit 1
         }
@@ -219,7 +225,7 @@ finally
 	if ($synchronizationResult.Failures.Count -gt 0 )
     # 如果計算出傳輸失敗數
     {
-        Write-Host "Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been uploaded."
+        Write-Host " 07 Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been uploaded."
         if ($PSdebug)
         {
             $Failures = $synchronizationResult.Transfers | Where-Object {$Null -ne $_.Error } | Select-Object -Property FileName
@@ -258,7 +264,6 @@ finally
                             {
                                 # clean up 
                                 Remove-Item $tempfilepath
-                                $session.Dispose()
                             }
                         }
                     }
@@ -271,5 +276,5 @@ finally
         }
     }
     $session.Dispose()
-    Write-Host " 99 Transfer Session Done."
+    Write-Host " 99 Transfer Session CLosed."
 }
