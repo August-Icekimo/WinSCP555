@@ -131,9 +131,12 @@ try
     $sessionOptions.UserName = "$Username"
     $sessionOptions.Password = "$Password"
     $sessionOptions.HostName = "$HostName"
-    $sessionOptions.PortNumber = 22
+    $sessionOptions.PortNumber = "$PortNumber"
 # Reserve Future Version   $sessionOptions.SshHostKeyPolicy = "AcceptNew"
     $sessionOptions.GiveUpSecurityAndAcceptAnySshHostKey = "True"
+    # 在此直接插入Raw Setting, 輸入方式：
+    # https://winscp.net/eng/docs/rawsettings
+    ${props['SessionOptionsAddRawSettings']}
     $session = New-Object WinSCP.Session
 
     # Open transfer session    
@@ -148,7 +151,13 @@ try
         try 
         {
             Write-Host " 01 Now opening Session to $HostName ..."
+            # Advance 進階選項加入處
             $session.Open($sessionOptions)
+            $session.add_FileTransferred( { FileTransferred($_) } )
+            $session.Open($sessionOptions)
+            $transferOptions = New-Object WinSCP.TransferOptions
+            $transferOptions.FilePermissions = $Null
+            $transferOptions.PreserveTimestamp = $False
         }
         catch 
         {
@@ -162,7 +171,8 @@ try
             CountLocalFiles
             Write-Host " 05 Uploading.."
         }
-        $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", $RemoveFiles )
+        # 增加$transferOptions
+        $synchronizationResult = $session.PutFiles(  "\\?\$LDirectory", "$RDirectory", $RemoveFiles, $transferOptions)
     }
     finally
     {

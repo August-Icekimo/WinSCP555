@@ -142,7 +142,7 @@ properties.put("Status", "Success");
 				<value label="No">0</value>
 			</property>
 			<property name="SessionOptionsAddRawSettings">
-				<property-ui type="textAreaBox" label="Additional Setting:" default-value="" description="Add More Session-Option lines"/>
+				<property-ui type="textAreaBox" label="Additional Setting:" default-value='$sessionOptions.AddRawSettings("SslSessionReuse", "1")' description="Add More Session-Option lines"/>
 			</property>
 		</properties>
 		<post-processing>
@@ -188,12 +188,12 @@ properties.put("Status", "Success");
 				<property-ui type="checkBox" label="Check box" description="A check box"/>
 			</property> -->
 			<property name="RemoveFiles">
-				<property-ui type="selectBox" label="Remove Obsolete Files ?" description="Deletes obsolete files"/>
+				<property-ui type="selectBox" label="Remove Obsolete Files ?" default-value="0" description="Deletes obsolete files"/>
 				<value label="Yes">1</value>
 				<value label="No">0</value>
 			</property>
 			<property name="SessionOptionsAddRawSettings">
-				<property-ui type="textAreaBox" label="Additional Setting:" default-value="" description="Add More Session-Option lines"/>
+				<property-ui type="textAreaBox" label="Additional Setting:" default-value='$sessionOptions.AddRawSettings("SFTPMaxVersion", "4")' description="Add More Session-Option lines"/>
 			</property>
 
 			<!-- <property name="commandPath">

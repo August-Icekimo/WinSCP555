@@ -2,14 +2,14 @@
 <plugininfo>
 <author name='August Icekimo'>
 <organization>DTC</organization>
-<email>support@serena.com</email>
-<website>http://serena.com</website>
+<email>icekimo.chen@ims.com.tw</email>
+<website>https://github.com/August-Icekimo/WinSCP555</website>
 </author>
 <integration type='Deploy' />
-<tool-description>WinSCP plugin  [客製化WinSCP]</tool-description>
-<release-version>3.0</release-version>
+<tool-description>WinSCP plugin  [DTC客製化WinSCP]</tool-description>
+<release-version>4.0</release-version>
 <release-notes>
-<release-note plugin-version='3'>
-Final release</release-note>
+<release-note plugin-version='4'>
+Release for WS2019 OpenSSH deploy</release-note>
 </release-notes>
 </plugininfo>

@@ -1,23 +1,25 @@
-﻿function Get-Example 
+function Get-Example 
 {
     <#
     .SYNOPSIS
-        透過Powershell使用WinSCP.dll元件進行SFTP傳輸的通用腳本
+        透過Powershell使用WinSCP.dll元件進行FTPS/SFTP傳輸的通用腳本
     .DESCRIPTION
 
 # 可以直接修改下列參數進行傳輸測試
+    .PARAMETER ${props['FtpSecure']}
+        $FtpSecure = "ExplicitTls"
     .PARAMETER ${props['Username']}
-        $Username = "libsftphnms"
+        $Username = ""
     .PARAMETER ${props['Password']}
-        $Password = "1qaz@WSX"
+        $Password = ""
     .PARAMETER ${props['HostName']}
-        $HostName = "192.168.1.198"
+        $HostName = "10.10.133.1"
     .PARAMETER ${props['PortNumber']}
-        $PortNumber = "22"
+        $PortNumber = "991"
     .PARAMETER ${props['LDirectory']}
-        $LDirectory = "C:\varwrk\redpill-load\master\*"
+        $LDirectory = "D:\var\wrk\"
     .PARAMETER ${props['RDirectory']}
-        $RDirectory = "/"
+        $RDirectory = "\"
     .PARAMETER ${props['RemoveFiles']}
         $RemoveFiles = "0"
     .INPUTS
@@ -45,7 +47,7 @@ else
 {
     $PSdebug = $False
 }
-    $PSdebug = $True # Force to debug mode.
+#    $PSdebug = $True # Force to debug mode.
 
 $Global:succeedTransferdFiles = 1
 $Global:LocalFilesCount = 0
@@ -127,13 +129,20 @@ try
 {
     # Initial transfer session parameters with session object
 	$sessionOptions = New-Object WinSCP.SessionOptions
-    $sessionOptions.Protocol = [WinSCP.Protocol]::Sftp
+    $sessionOptions.Protocol = [WinSCP.Protocol]::Ftp
+    $sessionOptions.FtpSecure = "$FtpSecure"
     $sessionOptions.UserName = "$Username"
     $sessionOptions.Password = "$Password"
     $sessionOptions.HostName = "$HostName"
-    $sessionOptions.PortNumber = 22
-# Reserve Future Version   $sessionOptions.SshHostKeyPolicy = "AcceptNew"
-    $sessionOptions.GiveUpSecurityAndAcceptAnySshHostKey = "True"
+    # 新增加可以自由調整port number
+    $sessionOptions.PortNumber = "$PortNumber"
+    $sessionOptions.GiveUpSecurityAndAcceptAnyTlsHostCertificate = "$True"
+    # 在此直接插入Raw Setting, 輸入方式：
+    # https://winscp.net/eng/docs/rawsettings
+    # 
+    # $sessionOptions.AddRawSettings("ProxyMethod", "3")
+    # $sessionOptions.AddRawSettings("ProxyHost", "proxy")
+    ${props['SessionOptionsAddRawSettings']}
     $session = New-Object WinSCP.Session
 
     # Open transfer session    
@@ -141,10 +150,6 @@ try
     {
         $session.add_FileTransferred( { FileTransferred($_) } )
         Write-Host " 00 Session options loaded ..."
-        if ($PSdebug)
-        {
-            Write-Host " ($sessionOptions ) "
-        }
         try 
         {
             Write-Host " 01 Now opening Session to $HostName ..."
@@ -152,10 +157,9 @@ try
         }
         catch 
         {
-            # Print out the Error message.
+            # Pront out the Error message.
             Write-Host ($session.Output | Out-String)
         }
-
         if ($session.Opened)
         {
             Write-Host " 02 Session Opened ..."
@@ -168,7 +172,7 @@ try
     {
         $synchronizationResult.Check()
         $Global:succeedTransferdFiles--
-        Write-Host " 06 Total: $Global:succeedTransferdFiles Files."
+        Write-Host " 03 Total: $Global:succeedTransferdFiles Files."
     }
     exit 0
 
@@ -177,14 +181,13 @@ try
 catch [Exception]
 # 抓到執行錯誤，exit 1
 {
-
-    Write-Host " 91 Exception caught. Something went wrong."
+    Write-Host" 91 Exception caught. Something went wrong."
     $Global:succeedTransferdFiles--;
     $successfulUpload = $synchronizationResult.Transfers.Count - $synchronizationResult.Failures.Count
 
     if ($successfulUpload -ne $Global:succeedTransferdFiles)
     { 
-        Write-Host " 92 File transfer stopped, and files count not match."
+        Write-Host" 92 File transfer stopped, and files count not match."
     }
     $session.Dispose() # Maybe session was started.
     $ErrMsg = $synchronizationResult.Failures
@@ -202,8 +205,8 @@ finally
 # 傳輸後核對檢查
 {
 
-    if ($session.Opened -eq $True) 
-    # 如果有成功打開連線，就計算檔案傳輸完成數
+    if ($session.Opened -eq $true) 
+    # 如果有成功連線，就計算檔案傳輸完成數
     {
         Write-Host  " 07 Successful uploaded: $Global:succeedTransferdFiles ... "
     }
@@ -232,17 +235,14 @@ finally
         Write-Host " 07 Warning: Only $Global:succeedTransferdFiles of $Global:LocalFilesCount has been uploaded."
         if ($PSdebug)
         {
-            #試圖找出斷頭的檔案，應該MD5會不一樣
             $Failures = $synchronizationResult.Transfers | Where-Object {$Null -ne $_.Error } | Select-Object -Property FileName
             if ($Null  -ne $Failures.FileName ) 
             {
-                #先處理檔案路徑轉換
                 $RemotePath = Split-Path $Failures.FileName
                 Write-Host " Local MD5 Checksum in JSON format, may compare to server-side file."
                 $RS = "$RDirectory"
                 $RemotePath = $RemotePath.Replace("\\?\$RS", "")
                 $RemotePath = "\" + "$RemotePath"
-                #逐一比對檔案MD5 Checksum
                 foreach ( $Sfilename in $Failures.FileName)
                 {
                     GetFilesMD5($Sfilename)
@@ -254,7 +254,6 @@ finally
                         $Suspected = $Suspected.Replace( "\", "/" )
                         $Suspected = $Suspected.Replace( "//", "/" )
                         $x = $session.FileExists($Suspected)
-                        #如果有嫌犯，試圖抓回來查看
 
                         if ( $x )
                         {
@@ -284,5 +283,5 @@ finally
         }
     }
     $session.Dispose()
-    Write-Host " 99 Transfer Session Closed."
+    Write-Host " 99 Transfer Session CLosed."
 }
