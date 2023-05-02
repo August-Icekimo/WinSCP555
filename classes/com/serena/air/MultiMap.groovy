@@ -6,34 +6,49 @@
  * Contains Confidential Information. Except as specifically indicated otherwise, a valid license is required for possession, use or copying. Consistent with FAR 12.211 and 12.212, Commercial Computer Software, Computer Software Documentation, and Technical Data for Commercial Items are licensed to the U.S. Government under vendor's standard commercial license.
  */
 
-package com.urbancode.air.plugin.teamforge
+package com.serena.air
 
-import java.util.Map;
+class MultiMap<K, V> implements Map<K, List<V>>{
+    @Delegate
+    private Map<K, List<V>> map
 
-
-class Folder {
-    def id
-    def name
-    def parentId
-    def Map<String, Folder> children = new HashMap<String, Folder>()
-    
-    public Folder(id, name, parentId) {
-        this.id = id
-        this.name = name
-        this.parentId = parentId
+    MultiMap(){
+        map = [:]
+    }
+    MultiMap(Map map){
+        this.map = map
     }
 
-    public boolean equals(Object o) {
-        if (o instanceof Folder && o != null) {
-            return id.equals(o.id)
-        }
-        else {
-            return false
-        }
+    @Override
+    public List<V> put(K key, List<V> value){
+        map.put(key, value)
     }
 
-    public String toString() {
-        return "[id:$id, name:$name, parent:$parentId, children:${children.keySet()}]"
+    public V put(K key, V value){
+        if(value instanceof List){
+            return map.put(key, value)
+        }
+
+        List list = get(key)
+        list << value
+        return list
+    }
+
+    public V getSingleValue(K key) {
+        List<V> value = map.get(key)
+        if (value != null && value.size() > 0){
+            return value.get(0)
+        }
+        return null
+    }
+
+    @Override
+    public List<V> get(Object key) {
+        List<V> value = map.get(key)
+        if (value == null){
+            value = []
+            map.put(key, value)
+        }
+        return value
     }
 }
-
