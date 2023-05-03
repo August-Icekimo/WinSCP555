@@ -1,39 +1,39 @@
-﻿function Get-Example 
-{
-    <#
-    .SYNOPSIS
-        透過Powershell使用WinSCP.dll元件進行SFTP傳輸的通用腳本
-    .DESCRIPTION
+﻿# function Get-Example 
+# {
+#     <#
+#     .SYNOPSIS
+#         透過Powershell使用WinSCP.dll元件進行SFTP傳輸的通用腳本
+#     .DESCRIPTION
 
-# 可以直接修改下列參數進行傳輸測試
-    .PARAMETER ${props['Username']}
-        $Username = "libsftphnms"
-    .PARAMETER ${props['Password']}
-        $Password = "1qaz@WSX"
-    .PARAMETER ${props['HostName']}
-        $HostName = "192.168.1.198"
-    .PARAMETER ${props['PortNumber']}
-        $PortNumber = "22"
-    .PARAMETER ${props['LDirectory']}
-        $LDirectory = "C:\varwrk\redpill-load\master\*"
-    .PARAMETER ${props['RDirectory']}
-        $RDirectory = "/"
-    .PARAMETER ${props['RemoveFiles']}
-        $RemoveFiles = "0"
-    .INPUTS
-        最終接入DA plugin時從$props[]接入各項參數，並透過環境變數DTC_ANA改變訊息
-    .OUTPUTS
-        透過環境變數DTC_ANA改變訊息
-    .EXAMPLE
+# # 可以直接修改下列參數進行傳輸測試
+#     .PARAMETER ${props['Username']}
+#         $Username = "libsftphnms"
+#     .PARAMETER ${props['Password']}
+#         $Password = "1qaz@WSX"
+#     .PARAMETER ${props['HostName']}
+#         $HostName = "192.168.1.198"
+#     .PARAMETER ${props['PortNumber']}
+#         $PortNumber = "22"
+#     .PARAMETER ${props['LDirectory']}
+#         $LDirectory = "C:\varwrk\redpill-load\master\*"
+#     .PARAMETER ${props['RDirectory']}
+#         $RDirectory = "/"
+#     .PARAMETER ${props['RemoveFiles']}
+#         $RemoveFiles = "0"
+#     .INPUTS
+#         最終接入DA plugin時從$props[]接入各項參數，並透過環境變數DTC_ANA改變訊息
+#     .OUTPUTS
+#         透過環境變數DTC_ANA改變訊息
+#     .EXAMPLE
 
-    .LINK
+#     .LINK
 
-    .NOTES
+#     .NOTES
 
 
-    #>
+#     #>
 
-}
+# }
 
 # Get a EnvironmentVariable DTC_ANA=PLEASE to enable debug mode.
 $PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA")

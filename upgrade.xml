@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin-upgrade xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.urbancode.com/UpgradeXMLSchema_v1">
-<migrate to-version="4">
+<migrate to-version="3">
 <migrate-command name="SFTP Sync Artifacts">
 <migrate-properties>
 <migrate-property name="UserName" old="UserName"/>
@@ -10,7 +10,7 @@
 </migrate-properties>
 </migrate-command>
 </migrate>
-<migrate to-version="4">
+<migrate to-version="3">
 <migrate-command name="FTPS Sync Artifacts">
 <migrate-properties>
 <migrate-property name="UserName" old="UserName"/>
@@ -20,7 +20,7 @@
 </migrate-properties>
 </migrate-command>
 </migrate>
-<migrate to-version="4">
+<migrate to-version="3">
 <migrate-command name="FTPS Sync AdvanceOption" >
 <migrate-properties>
 <migrate-property name="UserName" old="UserName"/>
@@ -30,7 +30,7 @@
 </migrate-properties>
 </migrate-command>
 </migrate>
-<migrate to-version="4">
+<migrate to-version="3">
 <migrate-command name="SFTP Sync AdvanceOption" >
 <migrate-properties>
 <migrate-property name="UserName" old="UserName"/>

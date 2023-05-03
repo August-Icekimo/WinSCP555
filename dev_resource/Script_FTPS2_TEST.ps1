@@ -1,41 +1,41 @@
-function Get-Example 
-{
-    <#
-    .SYNOPSIS
-        透過Powershell使用WinSCP.dll元件進行FTPS/SFTP傳輸的通用腳本
-    .DESCRIPTION
+# function Get-Example 
+# {
+#     <#
+#     .SYNOPSIS
+#         透過Powershell使用WinSCP.dll元件進行FTPS/SFTP傳輸的通用腳本
+#     .DESCRIPTION
 
-# 可以直接修改下列參數進行傳輸測試
-    .PARAMETER ${props['FtpSecure']}
-        $FtpSecure = "ExplicitTls"
-    .PARAMETER ${props['Username']}
-        $Username = ""
-    .PARAMETER ${props['Password']}
-        $Password = ""
-    .PARAMETER ${props['HostName']}
-        $HostName = "10.10.133.1"
-    .PARAMETER ${props['PortNumber']}
-        $PortNumber = "991"
-    .PARAMETER ${props['LDirectory']}
-        $LDirectory = "D:\var\wrk\"
-    .PARAMETER ${props['RDirectory']}
-        $RDirectory = "\"
-    .PARAMETER ${props['RemoveFiles']}
-        $RemoveFiles = "0"
-    .INPUTS
-        最終接入DA plugin時從$props[]接入各項參數，並透過環境變數DTC_ANA改變訊息
-    .OUTPUTS
-        透過環境變數DTC_ANA改變訊息
-    .EXAMPLE
+# # 可以直接修改下列參數進行傳輸測試
+#     .PARAMETER ${props['FtpSecure']}
+#         $FtpSecure = "ExplicitTls"
+#     .PARAMETER ${props['Username']}
+#         $Username = ""
+#     .PARAMETER ${props['Password']}
+#         $Password = ""
+#     .PARAMETER ${props['HostName']}
+#         $HostName = "10.10.133.1"
+#     .PARAMETER ${props['PortNumber']}
+#         $PortNumber = "991"
+#     .PARAMETER ${props['LDirectory']}
+#         $LDirectory = "D:\var\wrk\"
+#     .PARAMETER ${props['RDirectory']}
+#         $RDirectory = "\"
+#     .PARAMETER ${props['RemoveFiles']}
+#         $RemoveFiles = "0"
+#     .INPUTS
+#         最終接入DA plugin時從$props[]接入各項參數，並透過環境變數DTC_ANA改變訊息
+#     .OUTPUTS
+#         透過環境變數DTC_ANA改變訊息
+#     .EXAMPLE
 
-    .LINK
+#     .LINK
 
-    .NOTES
+#     .NOTES
 
 
-    #>
+#     #>
 
-}
+# }
 
 # Get a EnvironmentVariable DTC_ANA=PLEASE to enable debug mode.
 $PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA")
