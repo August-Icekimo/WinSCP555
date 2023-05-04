@@ -1,5 +1,6 @@
 .DS_Store
 .vscode/*
+- lib/*
 *.zip
-3rdParty/*
+3rdParty/**
 *.body
