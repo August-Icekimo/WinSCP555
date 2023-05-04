@@ -251,7 +251,8 @@ ch.ignoreExitValue(true)
 
 //create the script, set it to delete when the step exits, create it and clear it just in case there was somehow some data there.
 def curTime = System.currentTimeMillis()
-def scriptData = new File("DeployScript${curTime}.ps1")
+def ScriptDir = new File("../.").getCanonicalPath()
+def scriptData = new File(ScriptDir,"DeployScript${curTime}.ps1")
 
 scriptData.deleteOnExit()
 scriptData.createNewFile()
