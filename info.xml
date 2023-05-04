@@ -13,9 +13,9 @@
 </author>
 <integration type='Deploy' />
 <tool-description>WinSCP plugin  [DTC客製化WinSCP]</tool-description>
-<release-version>3.0</release-version>
+<release-version>22</release-version>
 <release-notes>
-<release-note plugin-version='3'>
+<release-note plugin-version='2'>
 Release for WS2019 OpenSSH deploy</release-note>
 </release-notes>
 </plugininfo>

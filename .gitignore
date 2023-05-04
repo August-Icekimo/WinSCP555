@@ -1,8 +1,5 @@
 .DS_Store
 .vscode/*
 *.zip
-# Logs
-logs
-*.log
 3rdParty/*
 *.body
