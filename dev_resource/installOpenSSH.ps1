@@ -1,4 +1,10 @@
 ﻿
+# 提供一個制式安裝OpenSSH Server的SOP，順便裝一下 Client
+
+if (! ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    throw "Run with administrator rights"
+}
+
 Set-Variable -Name "clientStatus" -Scope global -Description "OpenSSH Client install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Client*').State
 Set-Variable -Name "serverStatus" -Scope global -Description "OpenSSH Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*').State
 # 先行檢查是否有管理者權限可以安裝
@@ -75,8 +81,8 @@ else
 }
 
 Write-Host "建立一個本地使用者帳號,作為sftp傳輸使用" 
-$username = Read-Host -Prompt "輸入使用者名稱"
-$password = Read-Host -Prompt "輸入使用者密碼" -AsSecureString 
+$username = Read-Host -Prompt "輸入SFTP使用者名稱"
+$password = Read-Host -Prompt "輸入SFTP使用者密碼" -AsSecureString 
 try 
 {
     New-LocalUser -Name "$username" -Password $password -FullName "sftp User" -Description "sftp user"
