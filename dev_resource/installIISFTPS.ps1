@@ -1,39 +1,92 @@
-# 提供一個IIS制式安裝FTPS Server的SOP，最好是順便開好服務
+# 提供一個IIS制式安裝FTPS Server的SOP，最好是順便開好服務，最好還會重開機喔
 # REF : https://4sysops.com/archives/install-and-configure-an-ftp-server-with-powershell/
 # REF : https://github.com/ztrhgf/useful_powershell_functions/blob/master/FTP/install_FTP_server.ps1
+#
+# Explicit 顯式模式（也稱為FTPES），FTPS客戶端先與伺服器建立明文連接，然後從控制通道明確請求伺服器端升級為加密連接（Cmd: AUTH TLS）。 
+# 控制通道與資料通道預設埠與原始FTP一樣。控制通道始終加密，而資料通道是否加密則為可選項。 
+# 同時若伺服器未限制明文連接，也可以使用未加密的原始FTP進行連接。
+# 如果您啟用 FTPS 並將 FTP site指派給埠 990 以外的任何埠，就會使用顯式模式。
+#
+# 隱式模式 Implicit FTPS下不支援協商是否使用加密，所有的連接資料均為加密。客戶端必須先使用TLS Client Hello訊息向FTPS伺服器進行握手來建立加密連接。
+# 如果FTPS伺服器未收到此類訊息，則伺服器應斷開連接。 
+# 為了保持與現有的非FTPS感知客戶端的相容性，隱式FTPS預設在IANA規定的埠990/TCP上監聽FTPS控制通道，並在埠989/TCP上監聽FTPS資料通道。
+# 使用 FTP 7 時，如果您啟用 FTPS 並將 FTP site指派給埠 990，則會使用隱式模式。
+#
+# 為了資安考量，故需強制使用990，使用Implicit FTPS強迫加密，但預設值WinSCP連接時不會連往CA驗證憑證，可簡單使用自簽憑證。
+#
 # Install the Windows feature for FTP
 
 if (! ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     throw "+管理者權限 Run with administrator rights!"
 }
 
+# 先檢查目前安狀狀態，首次執行會要求重新開機
+# 重新開機以後，直接再執行一次，就繼續設定
 
-Set-Variable -Name "FTPSStatus" -Scope global -Description "Web-FTPS-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-FTP-Server*').State
+Set-Variable -Name "FTPSStatus" -Scope global -Description "Web-FTPS-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-FTP-Server').InstallState
+if ( $FTPSStatus -ne "Installed" )
+{
+    $FTPSStatus = Install-WindowsFeature Web-FTP-Server -IncludeAllSubFeature
+    # ExitCode      : SuccessRestartRequired / NoChangeNeeded
+}
 
-Install-WindowsFeature Web-FTP-Server -IncludeAllSubFeature
-Install-WindowsFeature Web-Server -IncludeAllSubFeature  IncludeManagementTools
+Set-Variable -Name "WebStatus" -Scope global -Description "Web-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-Server').InstallState
+if ( $WebStatus -ne "Installed" )
+{
+    $WebStatus = Install-WindowsFeature Web-Server -IncludeAllSubFeature -IncludeManagementTools
+    # ExitCode      : SuccessRestartRequired / NoChangeNeeded
+}
+
+if ( $FTPSStatus.ExitCode -eq "SuccessRestartRequired" -or $WebStatus.ExitCode -eq "SuccessRestartRequired" )
+{
+    Write-Host "準備重新開機"
+    Restart-Computer -Confirm
+}
+else
+{
+    Write-Host "請手動檢查安裝結果"
+}
 
 # Import the module, this will map an Internet Information Services (IIS) drive (IIS:\)
 Import-Module WebAdministration -ea Stop
 Write-Host "change range of ports for passive FTP to 60000-60100"
 Set-WebConfiguration "/system.ftpServer/firewallSupport" -PSPath "IIS:\" -Value @{lowDataChannelPort="60000";highDataChannelPort="60100";}
 # cmd /c "$env:windir\System32\inetsrv\appcmd set config /section:system.ftpServer/firewallSupport /lowDataChannelPort:60000 /highDataChannelPort:65535"
-Write-Host"請檢查防火牆規則與限縮動態埠範圍 Please check firewall setting."
+Write-Host "請檢查防火牆規則與限縮動態埠範圍 Please check firewall setting."
 Get-IISConfigSection -SectionPath "system.ftpServer/firewallSupport" 
 Write-Host "先重啟服務 Restart Ftp Service" 
 Restart-Service ftpsvc 
 
 
 Write-Host "確認防火牆規則 FTPS-Server-In-TCP 已經建立，如果沒有，就新增一個"
-
-if (!(Get-NetFirewallRule -Name "FTPS-Server-In-TCP" -ErrorAction SilentlyContinue | Select-Object Name, Enabled)) 
+# Name                  : IIS-WebServerRole-FTP-Passive-In-TCP
+# DisplayName           : FTP 伺服器被動 (FTP 被動輸入流量)
+# Description           : 允許 Internet Information Services (IIS) 之被動 FTP 流量的輸入規則 [TCP > 1023]
+# DisplayGroup          : FTP 伺服器
+# Group                 : @%SystemRoot%\system32\firewallapi.dll,-38525
+# Enabled               : True
+# Profile               : Any
+# Platform              : {}
+# Direction             : Inbound
+# Action                : Allow
+# EdgeTraversalPolicy   : Block
+# LooseSourceMapping    : False
+# LocalOnlyMapping      : False
+# Owner                 : 
+# PrimaryStatus         : OK
+# Status                : 已從存放區成功剖析規則。 (65536)
+# EnforcementStatus     : NotApplicable
+# PolicyStoreSource     : PersistentStore
+# PolicyStoreSourceType : Local
+if (!(Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP6W" -ErrorAction SilentlyContinue | Select-Object Name, Enabled)) 
 {
     Write-Output "'FTPS-Server-In-TCP'防火牆規則建立中..."
-    New-NetFirewallRule -Name 'FTPS-Server-In-TCP' -DisplayName 'FTPS Server (IIS)' -Enabled True -Profile Any -Direction Inbound -Protocol TCP -Program Any -LocalAddress Any -Action Allow -LocalPort 21,60000-60100
+    New-NetFirewallRule -Name 'IIS-WebServerRole-FTP-Passive-In-TCP6W' -DisplayName 'FTP 伺服器被動 (FTP 被動輸入流量60K+100)' -Description "允許 Internet Information Services (IIS) 之被動 FTP 流量的輸入規則 [60K+100]" -Enabled True -Profile Any -Direction Inbound -Protocol TCP -Program Any -LocalAddress Any -Action Allow -LocalPort 990,60000-60100
 } 
 else 
 {
     Write-Output "'FTPS-Server-In-TCP'防火牆規則已經存在(已建立)。"
+    # https://learn.microsoft.com/en-us/powershell/module/netsecurity/remove-netfirewallrule?view=windowsserver2022-ps
 }
 
 # Config the FTP site
@@ -140,12 +193,17 @@ $dnsName = "poc.icekimo.idv.tw"
 $prompt = "Accept DNS name of this FTP server $dnsName. It will be used for certificate creation."
 $prompt = ($dnsName,$prompt)[[bool]$prompt]
 $prompt = $null
-
-Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.controlChannelPolicy -Value 1
-Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.dataChannelPolicy -Value 1
+# REF: https://learn.microsoft.com/zh-tw/iis/configuration/system.applicationhost/sites/sitedefaults/ftpserver/security/ssl
+Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.controlChannelPolicy -Value 1 
+# SslRequire = 1, SslRequireCredentialsOnly = 2
+Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.dataChannelPolicy -Value 1 
+# SslRequire = 1, SslRequireCredentialsOnly = 2
 $newCert = New-SelfSignedCertificate -FriendlyName "FTPS Server" -CertStoreLocation "Cert:\LocalMachine\$FTPSiteName" -DnsName $dnsName -NotAfter (Get-Date).AddMonths(60)
 # bind certificate to FTP site
+# 指定要用於 SSL 連線之伺服器端憑證的指紋雜湊。
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.serverCertHash -Value $newCert.GetCertHashString()
+# serverCertStoreName 指定伺服器 SSL 憑證的憑證存放區。 預設值是 MY
+#
 
 # Restart the FTP site for all changes to take effect
 Restart-WebItem "IIS:\Sites\$FTPSiteName" -Verbose
