@@ -19,117 +19,112 @@
 # Install the Windows feature for FTP
 
 if (! ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    throw "+管理者權限 Run with administrator rights!"
+    throw "會重開機，請用管理者權限 Run with administrator rights!"
 }
 
 # 先檢查目前安狀狀態，首次執行會要求重新開機
 # 重新開機以後，直接再執行一次，就繼續設定
 
 Set-Variable -Name "FTPSStatus" -Scope global -Description "Web-FTPS-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-FTP-Server').InstallState
-if ( $FTPSStatus -ne "Installed" )
-{
+if ( $FTPSStatus -ne "Installed" ) {
     $FTPSStatus = Install-WindowsFeature Web-FTP-Server -IncludeAllSubFeature
     # ExitCode      : SuccessRestartRequired / NoChangeNeeded
 }
 
 Set-Variable -Name "WebStatus" -Scope global -Description "Web-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-Server').InstallState
-if ( $WebStatus -ne "Installed" )
-{
+if ( $WebStatus -ne "Installed" ) {
     $WebStatus = Install-WindowsFeature Web-Server -IncludeAllSubFeature -IncludeManagementTools
     # ExitCode      : SuccessRestartRequired / NoChangeNeeded
 }
 
-if ( $FTPSStatus.ExitCode -eq "SuccessRestartRequired" -or $WebStatus.ExitCode -eq "SuccessRestartRequired" )
-{
+if ( $FTPSStatus.ExitCode -eq "SuccessRestartRequired" -or $WebStatus.ExitCode -eq "SuccessRestartRequired" ) {
     Write-Host "準備重新開機"
     Restart-Computer -Confirm
 }
-else
-{
+else {
     Write-Host "請手動檢查安裝結果"
 }
 
 # Import the module, this will map an Internet Information Services (IIS) drive (IIS:\)
 Import-Module WebAdministration -ea Stop
+
 Write-Host "change range of ports for passive FTP to 60000-60100"
 Set-WebConfiguration "/system.ftpServer/firewallSupport" -PSPath "IIS:\" -Value @{lowDataChannelPort="60000";highDataChannelPort="60100";}
-# cmd /c "$env:windir\System32\inetsrv\appcmd set config /section:system.ftpServer/firewallSupport /lowDataChannelPort:60000 /highDataChannelPort:65535"
 Write-Host "請檢查防火牆規則與限縮動態埠範圍 Please check firewall setting."
 Get-IISConfigSection -SectionPath "system.ftpServer/firewallSupport" 
 Write-Host "先重啟服務 Restart Ftp Service" 
 Restart-Service ftpsvc 
 
+######################################
 # 設定防火牆規則，關閉 20,21 ，修改為Implicit FTPS: 990,989,60K+100
 # https://learn.microsoft.com/en-us/powershell/module/netsecurity/remove-netfirewallrule?view=windowsserver2022-ps
-if ( ( Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True )
-{
+if ( ( Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True ){
     Disable-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP"
     Write-Host "關閉預設防火牆規則: IIS-WebServerRole-FTP-Passive-In-TCP [TCP >1023], $? ."
 }
 
-if ( ( Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-21" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True )
-{
+if ( ( Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-21" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True ){
     Disable-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-21"
     Write-Host "關閉預設防火牆規則: IIS-WebServerRole-FTP-In-TCP-21, $? ."
 }
 
-if ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-20" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True )
-{
+if ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-20" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True ){
     Disable-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-20"
     Write-Host "關閉預設防火牆規則: IIS-WebServerRole-FTP-Out-TCP-20, $? ."
 }
 
-if ( ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-990" -ErrorAction SilentlyContinue | Select-Object Enabled)) -eq $False )
-{
+if ( ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-990" -ErrorAction SilentlyContinue | Select-Object Enabled)) -eq $False ){
     Enable-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-990"
     Write-Host "確保開啟預設防火牆規則: IIS-WebServerRole-FTP-In-TCP-990, $? ."
 }
 
-if ( ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-989" -ErrorAction SilentlyContinue | Select-Object Enabled)) -eq $False )
-{
+if ( ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-989" -ErrorAction SilentlyContinue | Select-Object Enabled)) -eq $False ){
     Enable-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-989"
     Write-Host "確保開啟預設防火牆規則: IIS-WebServerRole-FTP-Out-TCP-989, $? ."
 }
 
 Write-Host "確認防火牆規則 FTPS Server Passive In被動輸入埠60K+100 已經建立，如果沒有，就新增一個"
 
-if ((Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP6W" -ErrorAction SilentlyContinue | Select-Object Enabled) -eq $False ) 
-{
+if ((Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP6W" -ErrorAction SilentlyContinue | Select-Object Enabled) -eq $False ) {
     Write-Output "'FTPS-Server-In-TCP 60K+100'防火牆規則建立中..."
     New-NetFirewallRule -Name 'IIS-WebServerRole-FTP-Passive-In-TCP6W' -DisplayName 'FTP 伺服器被動 (FTP 被動輸入流量60K+100)' -Description "允許 Internet Information Services (IIS) 之被動 FTP 流量的輸入規則 [60K+100]" -Enabled True -Profile Any -Direction Inbound -Protocol TCP -Program Any -LocalAddress Any -Action Allow -LocalPort 60000-60100
     Write-Host "新建立防火牆規則 FTPS Server Passive In被動輸入埠60K+100"
 } 
-else 
-{
+else {
     Write-Output "'FTPS-Server-In-TCP 60K+100'防火牆規則已經存在(已建立)。"
 }
 ######################################
 # 結束程式安裝
 
 
-###################################### 
+######################################
 # 設定站台組態 Config the FTP site
 try {
     $FTPSiteName = 'My FTPS Site 001'
-    $prompt = Read-Host "Accept Site name: $FTPSiteName, or keyin a new one."
-    $prompt = ($FTPSiteName,$prompt)[[bool]$prompt]
-    $prompt = $null
+    if ( [Environment]::UserInteractive ) {
+        $prompt = Read-Host "Accept Site name: $FTPSiteName, or keyin a new one."
+        $prompt = ($FTPSiteName,$prompt)[[bool]$prompt]
+        $FTPSiteName = $prompt
+        $prompt = $null
+    }
 
     $FTPRootDir = 'D:\DAVAR\FTPsRoot'
-    $prompt = Read-Host "Accept Site name: $FTPRootDir, or keyin a new one."
-    $prompt = ($FTPRootDir,$prompt)[[bool]$prompt]
-    $prompt = $null
+    if ( [Environment]::UserInteractive ) {
+        $prompt = Read-Host "Accept Site Root Folder: $FTPRootDir, or keyin a new one."
+        $prompt = ($FTPRootDir,$prompt)[[bool]$prompt]
+        $FTPRootDir = $prompt
+        $prompt = $null
+    }
 
+    Write-Host "Site name: $FTPSiteName"
+    Write-Host "Site Root Folder: $FTPRootDir"
     $FTPPort = 990
 }
-catch 
-{
+catch {
     Write-Error "Someone stop configing the FTP site."
 }
-finally 
-{
-    if (Test-Path -Path $FTPRootDir) 
-    {
+finally {
+    if (Test-Path -Path $FTPRootDir) {
         mkdir -p $FTPRootDir
     }
     # Create the FTP site
@@ -140,9 +135,13 @@ finally
 try {
     Write-Host "Create the local Windows group: FTPS Users"
     $FTPUserGroupName = "FTPS_Users"
-    $prompt = Read-Host "Accept FTPUserGroupName: $FTPUserGroupName, or keyin a new one."
-    $prompt = ($FTPUserGroupName,$prompt)[[bool]$prompt]
-    $prompt = $null
+    if ( [Environment]::UserInteractive ) {
+        $prompt = Read-Host "Accept FTPUserGroupName: $FTPUserGroupName, or keyin a new one."
+        $prompt = ($FTPUserGroupName,$prompt)[[bool]$prompt]
+        $FTPUserGroupName = $prompt
+        $prompt = $null
+    }
+
 
     New-LocalGroup -Name $FTPUserGroupName -Description “Members of this group can connect throgh FTPS”
 }
@@ -153,16 +152,23 @@ catch {
 try {
     Write-Host "Create an FTP user"
     $FTPUserName = "libftps001"
-    $prompt = "Accept FTP User Name: $FTPUserName, or keyin a new one."
-    $prompt = ($FTPUserName,$prompt)[[bool]$prompt]
-    $prompt = $null
-
-    $FTPPassword = Read-Host -Prompt "輸入FTPS使用者密碼 一次機會 One chance password keyin" -AsSecureString 
+    if ( [Environment]::UserInteractive ) {
+        $prompt = "Accept FTP User Name: $FTPUserName, or keyin a new one."
+        $prompt = ($FTPUserName,$prompt)[[bool]$prompt]
+        $FTPUserName = $prompt
+        $prompt = $null
+    }
+    if ( [Environment]::UserInteractive ) {
+        $FTPPassword = Read-Host -Prompt "輸入FTPS使用者密碼，僅有一次機會 One chance password keyin(大小英、符號+數字)" -AsSecureString 
+    }
+    else    {
+        $FTPPassword = "SaySHAZAM@123"
+    }
 
     New-LocalUser -Name $FTPUserName -Password $FTPPassword -Description “User account to FTPS access” -PasswordNeverExpires -UserMayNotChangePassword
 }
 catch {
-    Write-Error "初四了阿北 Something wrong while Create User: $FTPUserName"
+    Write-Error "初四了阿北 Something wrong while Create User: $FTPUserName，通常是因為密碼不符合安全規則，回去重練吧"
 }
 
 try {
@@ -199,12 +205,7 @@ finally {
     # check these settings under IIS Manager > FTP Site > FTP Authorization Rules.
     # Change the SSL policy from Require SSL to Allow SSL connections.
     $UserAccount = New-Object System.Security.Principal.NTAccount("$FTPUserGroupName")
-    $AccessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($UserAccount,
-        'ReadAndExecute',
-        'ContainerInherit,ObjectInherit',
-        'None',
-        'Allow'
-    )
+    $AccessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($UserAccount,'ReadAndExecute','ContainerInherit','ObjectInherit','None','Allow' )
     $ACL = Get-Acl -Path $FTPRootDir
     $ACL.SetAccessRule($AccessRule)
     $ACL | Set-Acl -Path $FTPRootDir
@@ -215,25 +216,29 @@ Write-Host "verify this from the FTP root folder properties under the Security t
 ######################################
 # 強制使用force FTPS
 
-$dnsName = "poc.icekimo.idv.tw"
-$prompt = "Accept DNS name of this FTP server $dnsName. It will be used for certificate creation."
-$prompt = ($dnsName,$prompt)[[bool]$prompt]
-$prompt = $null
+$FQDName = "poc.icekimo.idv.tw"
+if ( [Environment]::UserInteractive ) {
+    $prompt = "Accept DNS name of this FTP server $FQDName. It will be used for certificate creation."
+    $prompt = ($FQDName,$prompt)[[bool]$prompt]
+    $FQDName = $prompt
+    $prompt = $null
+}
 
+######################################
+# 實際開始設定站台安全性原則
 # REF: https://learn.microsoft.com/zh-tw/iis/configuration/system.applicationhost/sites/sitedefaults/ftpserver/security/ssl
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.controlChannelPolicy -Value 1 
-# SslRequire = 1, SslRequireCredentialsOnly = 2
+    # SslRequire = 1, SslRequireCredentialsOnly = 2
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.dataChannelPolicy -Value 1 
-# SslRequire = 1, SslRequireCredentialsOnly = 2
+    # SslRequire = 1, SslRequireCredentialsOnly = 2
 
-$newCert = New-SelfSignedCertificate -FriendlyName "FTPS Server" -CertStoreLocation "Cert:\LocalMachine\MY" -DnsName $dnsName -NotAfter (Get-Date).AddMonths(60)
-# serverCertStoreName 指定伺服器 SSL 憑證的憑證存放區。 預設值是 MY
+$newCert = New-SelfSignedCertificate -FriendlyName "FTPS Server" -CertStoreLocation "Cert:\LocalMachine\MY" -DnsName $FQDName -NotAfter (Get-Date).AddMonths(60)
+    # serverCertStoreName 指定伺服器 SSL 憑證的憑證存放區。 預設值是 MY
 
-# bind certificate to FTP site
-# 指定要用於 SSL 連線之伺服器端憑證的指紋雜湊。
+# 將憑證指定給FTP site使用，同時指定要用於 SSL 連線之伺服器端憑證的指紋雜湊。
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.serverCertHash -Value $newCert.GetCertHashString()
 
-# Restart the FTP site for all changes to take effect
+# 重啟FTP site 使新設定生效
 Restart-WebItem "IIS:\Sites\$FTPSiteName" -Verbose
 
 ######################################
