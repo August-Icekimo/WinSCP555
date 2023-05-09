@@ -102,7 +102,7 @@ try\r\n
 {\r\n
 	\$sessionOptions = New-Object WinSCP.SessionOptions\r\n
     \$sessionOptions.Protocol = [WinSCP.Protocol]::Ftp\r\n
-    \$sessionOptions.FtpSecure = "\$FtpSecure"\r\n
+    \$sessionOptions.FtpSecure = "${props['FtpSecure']}"\r\n
     \$sessionOptions.UserName = "${props['Username']}"\r\n
     \$sessionOptions.Password = "${props['Password']}"\r\n
     \$sessionOptions.HostName = "${props['HostName']}"\r\n
@@ -140,12 +140,12 @@ try\r\n
 }\r\n
 catch [Exception]\r\n
 {\r\n
-    Write-Host" 91 Exception caught. Something went wrong."\r\n
+    Write-Host " 91 Exception caught. Something went wrong."\r\n
     \$Global:succeedTransferdFiles--;\r\n
     \$successfulUpload = \$synchronizationResult.Transfers.Count - \$synchronizationResult.Failures.Count\r\n
     if (\$successfulUpload -ne \$Global:succeedTransferdFiles)\r\n
     { \r\n
-        Write-Host" 92 File transfer stopped, and files count not match."\r\n
+        Write-Host " 92 File transfer stopped, and files count not match."\r\n
     }\r\n
     \$session.Dispose()\r\n
     \$ErrMsg = \$synchronizationResult.Failures\r\n
@@ -312,13 +312,5 @@ try {
     }
 } catch (ExitCodeException e) {
     println "Failed to execute script.\n" + e
-    //check if system variable DTC_ANA is set, and println scriptBody.
-    if ( env.DTC_ANA == "PLEASE" ) {
-        println "Here is debug stuff, enjoy it :"
-        println scriptBody[0]
-        println scriptBody[1]
-        println scriptBody[2]
-    }
-
     System.exit(1)
 }

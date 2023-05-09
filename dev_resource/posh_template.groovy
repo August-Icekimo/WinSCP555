@@ -120,12 +120,12 @@ try {
 } catch (ExitCodeException e) {
     println "Failed to execute script.\n" + e
     //check if system variable DTC_ANA is set, and println scriptBody.
-    if ( env.DTC_ANA == "PLEASE" ) {
-        println "Here is debug stuff, enjoy it :"
-        println scriptBody[0]
-        println scriptBody[1]
-        println scriptBody[2]
-    }
-
+    // def ANA = System.getenv('DTC_ANA') ?: 'none'
+    // if ( ANA == "PLEASE" ) {
+    //     println "Here is debug stuff, enjoy it :"
+    //     println scriptBody[0]
+    //     println scriptBody[1]
+    //     println scriptBody[2]
+    // }
     System.exit(1)
 }

@@ -29,6 +29,7 @@ sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e 's/"`"/"``"/g' -e 's/\\/\\\\/g' -e 's/\$/\\$/g' \
 -e 's/$/\\r\\n/g' \
+-e 's/\\$FtpSecure/\${props\[\[FtpSecure\]\]}/g' \
 -e 's/\\$Username/\${props\[\[Username\]\]}/g' \
 -e 's/\\$Password/\${props\[\[Password\]\]}/g' \
 -e 's/\\$HostName/\${props\[\[HostName\]\]}/g' \
@@ -44,6 +45,7 @@ sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e 's/"`"/"``"/g' -e 's/\\/\\\\/g' -e 's/\$/\\$/g' \
 -e 's/$/\\r\\n/g' \
 -e 's/\\$Username/\${props\[\[Username\]\]}/g' \
+-e 's/\\$FtpSecure/\${props\[\[FtpSecure\]\]}/g' \
 -e 's/\\$Password/\${props\[\[Password\]\]}/g' \
 -e 's/\\$HostName/\${props\[\[HostName\]\]}/g' \
 -e 's/\\$PortNumber/\${props\[\[PortNumber\]\]}/g' \
