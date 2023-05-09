@@ -181,13 +181,13 @@ try
 catch [Exception]
 # 抓到執行錯誤，exit 1
 {
-    Write-Host" 91 Exception caught. Something went wrong."
+    Write-Host " 91 Exception caught. Something went wrong."
     $Global:succeedTransferdFiles--;
     $successfulUpload = $synchronizationResult.Transfers.Count - $synchronizationResult.Failures.Count
 
     if ($successfulUpload -ne $Global:succeedTransferdFiles)
     { 
-        Write-Host" 92 File transfer stopped, and files count not match."
+        Write-Host " 92 File transfer stopped, and files count not match."
     }
     $session.Dispose() # Maybe session was started.
     $ErrMsg = $synchronizationResult.Failures

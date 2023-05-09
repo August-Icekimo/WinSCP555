@@ -150,7 +150,7 @@ try
         }
         catch 
         {
-            # Pront out the Error message.
+            # Print out the Error message.
             Write-Host ($session.Output | Out-String)
         }
         if ($session.Opened)
@@ -174,13 +174,13 @@ try
 catch [Exception]
 # 抓到執行錯誤，exit 1
 {
-    Write-Host" 91 Exception caught. Something went wrong."
+    Write-Host " 91 Exception caught. Something went wrong."
     $Global:succeedTransferdFiles--;
     $successfulUpload = $synchronizationResult.Transfers.Count - $synchronizationResult.Failures.Count
 
     if ($successfulUpload -ne $Global:succeedTransferdFiles)
     { 
-        Write-Host" 92 File transfer stopped, and files count not match."
+        Write-Host " 92 File transfer stopped, and files count not match."
     }
     $session.Dispose() # Maybe session was started.
     $ErrMsg = $synchronizationResult.Failures
@@ -193,7 +193,7 @@ catch [Exception]
     }
     exit 1
 }
-        \#HERE
+
 finally
 # 傳輸後核對檢查
 {
@@ -201,7 +201,7 @@ finally
     if ($session.Opened -eq $true) 
     # 如果有成功連線，就計算檔案傳輸完成數
     {
-        Write-Host  " 07 Successful uploaded: $Global:succeedTransferdFiles ... "
+        Write-Host " 07 Successful uploaded: $Global:succeedTransferdFiles ... "
     }
     else
     # 如果Session連線失敗，計算檔案數也是0，就印出訊息

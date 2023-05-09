@@ -161,7 +161,7 @@ try {
     if ( [Environment]::UserInteractive ) {
         $FTPPassword = Read-Host -Prompt "輸入FTPS使用者密碼，僅有一次機會 One chance password keyin(大小英、符號+數字)" -AsSecureString 
     }
-    else    {
+    else {
         $FTPPassword = "SaySHAZAM@123"
     }
 
