@@ -153,7 +153,7 @@ try {
     Write-Host "Create an FTP user"
     $FTPUserName = "libftps001"
     if ( [Environment]::UserInteractive ) {
-        $prompt = "Accept FTP User Name: $FTPUserName, or keyin a new one."
+        $prompt = Read-Host "Accept FTP User Name: $FTPUserName, or keyin a new one."
         $prompt = ($FTPUserName,$prompt)[[bool]$prompt]
         $FTPUserName = $prompt
         $prompt = $null
@@ -218,7 +218,7 @@ Write-Host "verify this from the FTP root folder properties under the Security t
 
 $FQDName = "poc.icekimo.idv.tw"
 if ( [Environment]::UserInteractive ) {
-    $prompt = "Accept DNS name of this FTP server $FQDName. It will be used for certificate creation."
+    $prompt = Read-Host "Accept DNS name of this FTP server $FQDName. It will be used for certificate creation."
     $prompt = ($FQDName,$prompt)[[bool]$prompt]
     $FQDName = $prompt
     $prompt = $null
