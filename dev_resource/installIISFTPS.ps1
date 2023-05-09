@@ -219,17 +219,22 @@ $dnsName = "poc.icekimo.idv.tw"
 $prompt = "Accept DNS name of this FTP server $dnsName. It will be used for certificate creation."
 $prompt = ($dnsName,$prompt)[[bool]$prompt]
 $prompt = $null
+
 # REF: https://learn.microsoft.com/zh-tw/iis/configuration/system.applicationhost/sites/sitedefaults/ftpserver/security/ssl
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.controlChannelPolicy -Value 1 
 # SslRequire = 1, SslRequireCredentialsOnly = 2
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.dataChannelPolicy -Value 1 
 # SslRequire = 1, SslRequireCredentialsOnly = 2
-$newCert = New-SelfSignedCertificate -FriendlyName "FTPS Server" -CertStoreLocation "Cert:\LocalMachine\$FTPSiteName" -DnsName $dnsName -NotAfter (Get-Date).AddMonths(60)
+
+$newCert = New-SelfSignedCertificate -FriendlyName "FTPS Server" -CertStoreLocation "Cert:\LocalMachine\MY" -DnsName $dnsName -NotAfter (Get-Date).AddMonths(60)
+# serverCertStoreName 指定伺服器 SSL 憑證的憑證存放區。 預設值是 MY
+
 # bind certificate to FTP site
 # 指定要用於 SSL 連線之伺服器端憑證的指紋雜湊。
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.serverCertHash -Value $newCert.GetCertHashString()
-# serverCertStoreName 指定伺服器 SSL 憑證的憑證存放區。 預設值是 MY
-#
 
 # Restart the FTP site for all changes to take effect
 Restart-WebItem "IIS:\Sites\$FTPSiteName" -Verbose
+
+######################################
+# 經測試此時已經可以用WinSCP /FTP /implicit成功登入
