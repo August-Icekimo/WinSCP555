@@ -13,7 +13,9 @@
 # 使用 FTP 7 時，如果您啟用 FTPS 並將 FTP site指派給埠 990，則會使用隱式模式。
 #
 # 為了資安考量，故需強制使用990，使用Implicit FTPS強迫加密，但預設值WinSCP連接時不會連往CA驗證憑證，可簡單使用自簽憑證。
-#
+
+
+######################################
 # Install the Windows feature for FTP
 
 if (! ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -57,39 +59,56 @@ Get-IISConfigSection -SectionPath "system.ftpServer/firewallSupport"
 Write-Host "先重啟服務 Restart Ftp Service" 
 Restart-Service ftpsvc 
 
-
-Write-Host "確認防火牆規則 FTPS-Server-In-TCP 已經建立，如果沒有，就新增一個"
-# Name                  : IIS-WebServerRole-FTP-Passive-In-TCP
-# DisplayName           : FTP 伺服器被動 (FTP 被動輸入流量)
-# Description           : 允許 Internet Information Services (IIS) 之被動 FTP 流量的輸入規則 [TCP > 1023]
-# DisplayGroup          : FTP 伺服器
-# Group                 : @%SystemRoot%\system32\firewallapi.dll,-38525
-# Enabled               : True
-# Profile               : Any
-# Platform              : {}
-# Direction             : Inbound
-# Action                : Allow
-# EdgeTraversalPolicy   : Block
-# LooseSourceMapping    : False
-# LocalOnlyMapping      : False
-# Owner                 : 
-# PrimaryStatus         : OK
-# Status                : 已從存放區成功剖析規則。 (65536)
-# EnforcementStatus     : NotApplicable
-# PolicyStoreSource     : PersistentStore
-# PolicyStoreSourceType : Local
-if (!(Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP6W" -ErrorAction SilentlyContinue | Select-Object Name, Enabled)) 
+# 設定防火牆規則，關閉 20,21 ，修改為Implicit FTPS: 990,989,60K+100
+# https://learn.microsoft.com/en-us/powershell/module/netsecurity/remove-netfirewallrule?view=windowsserver2022-ps
+if ( ( Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True )
 {
-    Write-Output "'FTPS-Server-In-TCP'防火牆規則建立中..."
-    New-NetFirewallRule -Name 'IIS-WebServerRole-FTP-Passive-In-TCP6W' -DisplayName 'FTP 伺服器被動 (FTP 被動輸入流量60K+100)' -Description "允許 Internet Information Services (IIS) 之被動 FTP 流量的輸入規則 [60K+100]" -Enabled True -Profile Any -Direction Inbound -Protocol TCP -Program Any -LocalAddress Any -Action Allow -LocalPort 990,60000-60100
+    Disable-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP"
+    Write-Host "關閉預設防火牆規則: IIS-WebServerRole-FTP-Passive-In-TCP [TCP >1023], $? ."
+}
+
+if ( ( Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-21" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True )
+{
+    Disable-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-21"
+    Write-Host "關閉預設防火牆規則: IIS-WebServerRole-FTP-In-TCP-21, $? ."
+}
+
+if ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-20" -ErrorAction SilentlyContinue | Select-Object Enabled ) -eq $True )
+{
+    Disable-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-20"
+    Write-Host "關閉預設防火牆規則: IIS-WebServerRole-FTP-Out-TCP-20, $? ."
+}
+
+if ( ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-990" -ErrorAction SilentlyContinue | Select-Object Enabled)) -eq $False )
+{
+    Enable-NetFirewallRule -Name "IIS-WebServerRole-FTP-In-TCP-990"
+    Write-Host "確保開啟預設防火牆規則: IIS-WebServerRole-FTP-In-TCP-990, $? ."
+}
+
+if ( ( (Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-989" -ErrorAction SilentlyContinue | Select-Object Enabled)) -eq $False )
+{
+    Enable-NetFirewallRule -Name "IIS-WebServerRole-FTP-Out-TCP-989"
+    Write-Host "確保開啟預設防火牆規則: IIS-WebServerRole-FTP-Out-TCP-989, $? ."
+}
+
+Write-Host "確認防火牆規則 FTPS Server Passive In被動輸入埠60K+100 已經建立，如果沒有，就新增一個"
+
+if ((Get-NetFirewallRule -Name "IIS-WebServerRole-FTP-Passive-In-TCP6W" -ErrorAction SilentlyContinue | Select-Object Enabled) -eq $False ) 
+{
+    Write-Output "'FTPS-Server-In-TCP 60K+100'防火牆規則建立中..."
+    New-NetFirewallRule -Name 'IIS-WebServerRole-FTP-Passive-In-TCP6W' -DisplayName 'FTP 伺服器被動 (FTP 被動輸入流量60K+100)' -Description "允許 Internet Information Services (IIS) 之被動 FTP 流量的輸入規則 [60K+100]" -Enabled True -Profile Any -Direction Inbound -Protocol TCP -Program Any -LocalAddress Any -Action Allow -LocalPort 60000-60100
+    Write-Host "新建立防火牆規則 FTPS Server Passive In被動輸入埠60K+100"
 } 
 else 
 {
-    Write-Output "'FTPS-Server-In-TCP'防火牆規則已經存在(已建立)。"
-    # https://learn.microsoft.com/en-us/powershell/module/netsecurity/remove-netfirewallrule?view=windowsserver2022-ps
+    Write-Output "'FTPS-Server-In-TCP 60K+100'防火牆規則已經存在(已建立)。"
 }
+######################################
+# 結束程式安裝
 
-# Config the FTP site
+
+###################################### 
+# 設定站台組態 Config the FTP site
 try {
     $FTPSiteName = 'My FTPS Site 001'
     $prompt = Read-Host "Accept Site name: $FTPSiteName, or keyin a new one."
@@ -101,12 +120,18 @@ try {
     $prompt = ($FTPRootDir,$prompt)[[bool]$prompt]
     $prompt = $null
 
-    $FTPPort = 21
+    $FTPPort = 990
 }
-catch {
+catch 
+{
     Write-Error "Someone stop configing the FTP site."
 }
-finally {
+finally 
+{
+    if (Test-Path -Path $FTPRootDir) 
+    {
+        mkdir -p $FTPRootDir
+    }
     # Create the FTP site
     New-WebFtpSite -Name $FTPSiteName -Port $FTPPort -PhysicalPath $FTPRootDir
 }
@@ -142,7 +167,7 @@ catch {
 
 try {
     Write-Host "Add FTP user $FTPUserName to group $FTPUserGroupName"
-    Add-LocalGroupMember -Name $FTPUserGroupName -Member $FTPUserNam
+    Add-LocalGroupMember -Name $FTPUserGroupName -Member $FTPUserName
 }
 catch {
     Write-Error "Something wrong while adding FTP user $FTPUserName to group $FTPUserGroupName"
@@ -187,7 +212,8 @@ finally {
 
 Write-Host "verify this from the FTP root folder properties under the Security tab."
 
-# force FTPS
+######################################
+# 強制使用force FTPS
 
 $dnsName = "poc.icekimo.idv.tw"
 $prompt = "Accept DNS name of this FTP server $dnsName. It will be used for certificate creation."
