@@ -1,7 +1,10 @@
-# 提供一個IIS制式安裝FTPS Server的SOP，最好是順便開好服務，最好還會重開機喔
+# 提供一個IIS制式安裝FTPS Server的SOP，可能中途會重新開機而需要執行兩次
+# 它可能會因為要重開機導入新模組，再執行一次就會順便開好服務
+# 
 # REF : https://4sysops.com/archives/install-and-configure-an-ftp-server-with-powershell/
 # REF : https://github.com/ztrhgf/useful_powershell_functions/blob/master/FTP/install_FTP_server.ps1
 #
+# 技術細節說明： 加密模式選擇使用:990 Implicit FTPS強迫加密
 # Explicit 顯式模式（也稱為FTPES），FTPS客戶端先與伺服器建立明文連接，然後從控制通道明確請求伺服器端升級為加密連接（Cmd: AUTH TLS）。 
 # 控制通道與資料通道預設埠與原始FTP一樣。控制通道始終加密，而資料通道是否加密則為可選項。 
 # 同時若伺服器未限制明文連接，也可以使用未加密的原始FTP進行連接。
@@ -12,7 +15,7 @@
 # 為了保持與現有的非FTPS感知客戶端的相容性，隱式FTPS預設在IANA規定的埠990/TCP上監聽FTPS控制通道，並在埠989/TCP上監聽FTPS資料通道。
 # 使用 FTP 7 時，如果您啟用 FTPS 並將 FTP site指派給埠 990，則會使用隱式模式。
 #
-# 為了資安考量，故需強制使用990，使用Implicit FTPS強迫加密，但預設值WinSCP連接時不會連往CA驗證憑證，可簡單使用自簽憑證。
+# 為了資安考量，故需強制使用990，使用Implicit FTPS強迫加密，但預設值WinSCP連接時不會連往CA驗證憑證，可簡單使用自簽憑證就完成傳輸加密。
 
 
 ######################################
@@ -94,8 +97,9 @@ else {
     Write-Output "'FTPS-Server-In-TCP 60K+100'防火牆規則已經存在(已建立)。"
 }
 ######################################
-# 結束程式安裝
+# 結束IIS程式安裝與本機防火牆規則，後續設定組態
 
+Write-Host "目前系統功能模組與防火牆規則已經準備完畢，接下來進行FTPS站台設置。"
 
 ######################################
 # 設定站台組態 Config the FTP site
@@ -216,7 +220,7 @@ Write-Host "verify this from the FTP root folder properties under the Security t
 ######################################
 # 強制使用force FTPS
 
-$FQDName = "poc.icekimo.idv.tw"
+$FQDName = "poc.post.gov.tw"
 if ( [Environment]::UserInteractive ) {
     $prompt = Read-Host "Accept DNS name of this FTP server $FQDName. It will be used for certificate creation."
     $prompt = ($FQDName,$prompt)[[bool]$prompt]
@@ -234,7 +238,7 @@ Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.dataChannelPoli
 
 $newCert = New-SelfSignedCertificate -FriendlyName "FTPS Server" -CertStoreLocation "Cert:\LocalMachine\MY" -DnsName $FQDName -NotAfter (Get-Date).AddMonths(60)
     # serverCertStoreName 指定伺服器 SSL 憑證的憑證存放區。 預設值是 MY
-
+    # 不建議修改預設值，因為微軟參考書都喜歡 MY ，而且我的很好
 # 將憑證指定給FTP site使用，同時指定要用於 SSL 連線之伺服器端憑證的指紋雜湊。
 Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.serverCertHash -Value $newCert.GetCertHashString()
 
@@ -242,4 +246,4 @@ Set-ItemProperty -Path $FTPSitePath -Name ftpServer.security.ssl.serverCertHash 
 Restart-WebItem "IIS:\Sites\$FTPSiteName" -Verbose
 
 ######################################
-# 經測試此時已經可以用WinSCP /FTP /implicit成功登入
+# 可再次人工測試，此時已經可以用WinSCP /FTP /implicit成功登入
