@@ -6,3 +6,8 @@ Plugin for Micro Focus Deployment Automation
 下載後，執行dev_resource\wrap_zip.sh
 將產出的ZIP檔案透過DA選單[Administration]\[Automation]\[Load Plugin]上傳
 傳輸成功後，plugin就會更新。隨著使用會傳輸到Agent去執行。
+
+<a href="https://scan.coverity.com/projects/august-icekimo-winscp555">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/29327/badge.svg"/>
+</a>
