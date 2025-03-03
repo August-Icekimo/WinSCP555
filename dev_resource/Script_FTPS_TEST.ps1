@@ -37,7 +37,7 @@
 
 # }
 
-# Get a EnvironmentVariable DTC_ANA=PLEASE to enable debug mode.
+# Get a EnvironmentVariable DTC_ANA=PLEASE to enable debug mode.用環境變數開啟偵錯模式
 $PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA")
 if ($PSdebug -like "PLEASE" ) 
 {
