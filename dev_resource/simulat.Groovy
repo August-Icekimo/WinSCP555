@@ -1,3 +1,7 @@
+/* 用來模擬scriptBody分解組合的過程
+ * 這個script目標是用來產生一個Powershell script 在螢幕上顯示
+ * 看看放進去的香腸切片會不會拼回香腸
+ */
 def scriptBody = []
 scriptBody << """\
 \$PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA")\r\n
