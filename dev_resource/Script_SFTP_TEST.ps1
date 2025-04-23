@@ -36,16 +36,25 @@
 # }
 
 # Get a EnvironmentVariable DTC_ANA=PLEASE to enable debug mode.
-$PSdebug = [System.Environment]::GetEnvironmentVariable("DTC_ANA")
-if ($PSdebug -like "PLEASE" ) 
+if ($PSdebug -eq "PLEASE" ) 
 {
-    $PSdebug = $True;Write-Host "--DTC Analyst is waiting."
+    $PSdebug = $True
+    Write-Host "--DTC Analyst is waiting."
 }
 else 
 {
     $PSdebug = $False
 }
-    $PSdebug = $True # Force to debug mode.
+#  自我測試時可開  $PSdebug = $True # Force to debug mode.
+# 預設 WinSCP .NET 組件路徑
+$DefaultWinSCPPath = "C:\Windows\System32\WinSCPnet.dll"
+$WinSCPNetDllPath = $DefaultWinSCPPath
+
+# 檢查環境變數 WINSCPDLLPATH 是否存在且有值
+if ($env:WINSCPDLLPATH) {
+    $WinSCPNetDllPath = $env:WINSCPDLLPATH
+    if ($PSdebug) { Write-Host "DEBUG: Using WinSCP path from environment variable WINSCPDLLPATH: '$WinSCPNetDllPath'" }
+} elseif ($PSdebug) { Write-Host "DEBUG: Environment variable WINSCPDLLPATH not set or empty. Using default WinSCP path: '$WinSCPNetDllPath'" }
 
 $Global:succeedTransferdFiles = 1
 $Global:LocalFilesCount = 0
@@ -53,7 +62,7 @@ $Global:LocalFilesCount = 0
 # Test if WinSCP.dll is placed "C:\Windows\System32\WinSCPnet.dll"
 try
 {
-    Add-Type -Path "C:\Windows\System32\WinSCPnet.dll"
+    Add-Type -Path $WinSCPNetDllPath
     if ($PSdebug) 
     {
         Write-Host " 00 --WinSCP .NET Imported Successfully."
@@ -63,7 +72,7 @@ catch
 {
     if ($PSdebug)
     {
-        Write-Host " 00 --WinSCP .NET Imported Faild. Agent JRE Setting Might cause this fail, too."
+        Write-Host " 00 --WinSCP .NET Imported Faild from path: '$WinSCPNetDllPath'. Agent JRE Setting Might cause this fail, too."
     }
 }
 
