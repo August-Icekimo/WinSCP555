@@ -28,20 +28,38 @@ if (! ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity
 # 先檢查目前安狀狀態，首次執行會要求重新開機
 # 重新開機以後，直接再執行一次，就繼續設定
 
-Set-Variable -Name "FTPSStatus" -Scope global -Description "Web-FTPS-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-FTP-Server').InstallState
+<# Set-Variable -Name "FTPSStatus" -Scope global -Description "Web-FTPS-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-FTP-Server').InstallState
 if ( $FTPSStatus -ne "Installed" ) {
     $FTPSStatus = Install-WindowsFeature Web-FTP-Server -IncludeAllSubFeature
     # ExitCode      : SuccessRestartRequired / NoChangeNeeded
-}
+} #>
+# --- 使用 Install-WindowsFeature 直接檢查與安裝 (新增) ---
+Write-Host "檢查並安裝 Web-FTP-Server 功能..."
+$installFTPResult = Install-WindowsFeature -Name Web-FTP-Server -IncludeAllSubFeature
+if ($isDebug) { Write-Host "DEBUG: FTP Server 安裝結果: $($installFTPResult | Out-String)" }
+if (-not $installFTPResult.Success) {
+    Write-Error "安裝 Web-FTP-Server 失敗！請檢查錯誤訊息。"
+    # 可以在這裡加上 exit 或是其他錯誤處理邏輯
+} 
 
-Set-Variable -Name "WebStatus" -Scope global -Description "Web-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-Server').InstallState
+<# Set-Variable -Name "WebStatus" -Scope global -Description "Web-Server install status" -PassThru -Value (Get-WindowsCapability -Online | Where-Object Name -like 'Web-Server').InstallState
 if ( $WebStatus -ne "Installed" ) {
     $WebStatus = Install-WindowsFeature Web-Server -IncludeAllSubFeature -IncludeManagementTools
     # ExitCode      : SuccessRestartRequired / NoChangeNeeded
+} #>
+Write-Host "檢查並安裝 Web-Server (IIS) 功能..."
+$installIISResult = Install-WindowsFeature -Name Web-Server -IncludeAllSubFeature -IncludeManagementTools
+if ($isDebug) { Write-Host "DEBUG: Web Server (IIS) 安裝結果: $($installIISResult | Out-String)" }
+if (-not $installIISResult.Success) {
+    Write-Error "安裝 Web-Server (IIS) 失敗！請檢查錯誤訊息。"
+    # 可以在這裡加上 exit 或是其他錯誤處理邏輯
 }
 
-if ( $FTPSStatus.ExitCode -eq "SuccessRestartRequired" -or $WebStatus.ExitCode -eq "SuccessRestartRequired" ) {
-    Write-Host "準備重新開機"
+<# if ( $FTPSStatus.ExitCode -eq "SuccessRestartRequired" -or $WebStatus.ExitCode -eq "SuccessRestartRequired" ) {
+    Write-Host "準備重新開機" #>
+# 檢查 Install-WindowsFeature 的回傳物件，看是否需要重新開機
+if ($installFTPResult.RestartNeeded -eq 'Yes' -or $installIISResult.RestartNeeded -eq 'Yes') {
+    Write-Host "安裝過程需要重新開機才能完成。準備重新開機..."    
     Restart-Computer -Confirm
 }
 else {

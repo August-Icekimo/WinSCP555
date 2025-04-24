@@ -1,7 +1,7 @@
 #!/bin/bash
 # Convert the powershell script to groovy style script that can be accepted
-
-
+echo "start:"
+echo "Script_SFTP_TEST"
 # Remove all comments (both full-line and inline comments) and empty lines
 sed -e 's/\ *.#.*//g' -e 's/#.*$//g' -e '/^$/d' \
 # Escape special characters: backticks, backslashes, and dollar signs
@@ -22,7 +22,7 @@ sed -e 's/\ *.#.*//g' -e 's/#.*$//g' -e '/^$/d' \
 # Process input file and write to output file
 ./Script_SFTP_TEST.ps1 > Script_SFTP.body
 
-
+echo "Script_SFTP2_TEST"
 sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e 's/"`"/"``"/g' -e 's/\\/\\\\/g' -e 's/\$/\\$/g' \
 -e 's/$/\\r\\n/g' \
@@ -37,6 +37,7 @@ sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e "s/\]\]/'\]/g" \
 ./Script_SFTP2_TEST.ps1 > Script_SFTP2.body
 
+echo "Script_FTPS_TEST"
 sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e 's/"`"/"``"/g' -e 's/\\/\\\\/g' -e 's/\$/\\$/g' \
 -e 's/$/\\r\\n/g' \
@@ -52,6 +53,7 @@ sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e "s/\]\]/'\]/g" \
 ./Script_FTPS_TEST.ps1 > Script_FTPS.body
 
+echo "Script_FTPS2_TEST"
 sed -e 's/\ *.#.*//g' -e 's/#.*$//' -e '/^$/d' \
 -e 's/"`"/"``"/g' -e 's/\\/\\\\/g' -e 's/\$/\\$/g' \
 -e 's/$/\\r\\n/g' \
